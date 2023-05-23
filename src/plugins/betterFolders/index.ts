@@ -49,7 +49,7 @@ const settings = definePluginSettings({
     },
     closeAllEscape: {
         type: OptionType.BOOLEAN,
-        description: "v1: Close all folders when hitting escape key",
+        description: "Close all folders when hitting escape key",
         default: false,
     },
     closeAllHomeButton: {
