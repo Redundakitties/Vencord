@@ -25,7 +25,7 @@ import { Devs } from "@utils/constants";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByCode } from "@webpack";
-import { Menu, Popout, useState } from "@webpack/common";
+import { Menu, Popout, useState, Switch} from "@webpack/common";
 import type { ReactNode } from "react";
 import { openModal } from "@utils/modal";
 import PluginModal from "@components/PluginSettings/PluginModal";
@@ -44,11 +44,11 @@ const settings = definePluginSettings({
         description: "Open Notification Log",
         default: true,
     },
-    UpdaterTab: {
-        type: OptionType.BOOLEAN,
-        description: "Open Updater Modal",
-        default: true,
-    },
+    // UpdaterTab: {
+    //     type: OptionType.BOOLEAN,
+    //     description: "Open Updater Modal",
+    //     default: true,
+    // },
     BadgeAPI: {
         type: OptionType.BOOLEAN,
         description: "BadgeAPI settings",
@@ -69,6 +69,18 @@ const settings = definePluginSettings({
         description: "VencordToolbox settings",
         default: true,
     },
+    UpdaterTab: {
+        type: OptionType.COMPONENT,
+        description: "Add Updater to toolbox",
+        component: () =>
+        <Switch
+            value={settings.store.UpdaterTab}
+            onChange={(v: boolean) => settings.store.UpdaterTab = v}
+            disabled={IS_WEB}
+        >
+            Add Updater to toolbox
+        </Switch>
+    },
 })
 
 function VencordPopout(onClose: () => void) {
@@ -81,7 +93,7 @@ function VencordPopout(onClose: () => void) {
     }
 
     for (const plugin of Object.values(Vencord.Plugins.plugins)) {
-        if (plugin.toolboxActions && !excludedPluginNames.includes(plugin.name)) {
+        if (plugin.toolboxActions && !excludedPluginNames.includes(plugin.name) && Vencord.Plugins.isPluginEnabled(plugin.name)) {
             pluginEntries.push(
                 <Menu.MenuGroup
                     label={plugin.name}
@@ -125,7 +137,7 @@ function VencordPopout(onClose: () => void) {
                 />
             }
 
-            {settings.store.UpdaterTab &&
+            {!IS_WEB && settings.store.UpdaterTab &&
                 <Menu.MenuItem
                     id="vc-toolbox-updater-tab"
                     label="Open Updater"
