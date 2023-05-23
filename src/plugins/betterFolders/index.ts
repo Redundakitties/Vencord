@@ -23,8 +23,10 @@ import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy, findLazy, findStoreLazy } from "@webpack";
 import { FluxDispatcher } from "@webpack/common";
-
 import FolderSideBar from "./FolderSideBar";
+
+let isEscapePressed = false;
+const keydown = (e: KeyboardEvent) => e.key === "Escape" && (isEscapePressed = true);
 
 const GuildsTree = findLazy(m => m.prototype?.convertToFolder);
 const GuildFolderStore = findStoreLazy("SortedGuildStore");
@@ -49,7 +51,7 @@ const settings = definePluginSettings({
     },
     closeAllEscape: {
         type: OptionType.BOOLEAN,
-        description: "Close all folders when hitting escape key",
+        description: "v1: Close all folders when hitting escape key",
         default: false,
     },
     closeAllHomeButton: {
