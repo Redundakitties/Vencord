@@ -23,8 +23,10 @@ import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy, findLazy, findStoreLazy } from "@webpack";
 import { FluxDispatcher } from "@webpack/common";
-
 import FolderSideBar from "./FolderSideBar";
+
+let isEscapePressed = false;
+const keydown = (e: KeyboardEvent) => e.key === "Escape" && (isEscapePressed = true);
 
 const GuildsTree = findLazy(m => m.prototype?.convertToFolder);
 const GuildFolderStore = findStoreLazy("SortedGuildStore");
@@ -45,6 +47,11 @@ const settings = definePluginSettings({
     closeAllFolders: {
         type: OptionType.BOOLEAN,
         description: "Close all folders when selecting a server not in a folder",
+        default: false,
+    },
+    closeAllEscape: {
+        type: OptionType.BOOLEAN,
+        description: "v1: Close all folders when hitting escape key",
         default: false,
     },
     closeAllHomeButton: {
@@ -122,6 +129,7 @@ export default definePlugin({
     settings,
 
     start() {
+        document.addEventListener("keydown", onKeydown);
         const getGuildFolder = (id: string) => GuildFolderStore.getGuildFolders().find(f => f.guildIds.includes(id));
 
         FluxDispatcher.subscribe("CHANNEL_SELECT", this.onSwitch = data => {
@@ -157,6 +165,7 @@ export default definePlugin({
     },
 
     stop() {
+        document.removeEventListener("keydown", onKeydown);
         FluxDispatcher.unsubscribe("CHANNEL_SELECT", this.onSwitch);
         FluxDispatcher.unsubscribe("TOGGLE_GUILD_FOLDER_EXPAND", this.onToggleFolder);
     },
@@ -174,4 +183,14 @@ export default definePlugin({
         for (const id of ExpandedFolderStore.getExpandedFolders())
             FolderUtils.toggleGuildFolderExpand(id);
     },
+
 });
+
+function onKeydown(e: KeyboardEvent) {
+    if (settings.store.closeAllEscape) {
+        if (e.key == "Escape") {
+            for (const id of ExpandedFolderStore.getExpandedFolders())
+            FolderUtils.toggleGuildFolderExpand(id);
+        }
+    }
+}
