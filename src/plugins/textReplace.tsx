@@ -255,10 +255,12 @@ export default definePlugin({
     settings,
 
     toolboxActions: {
-        "Open Settings": () => {
-            const pluginIndex = Object.values(Vencord.Plugins.plugins).findIndex(plugin => plugin.name === "TextReplace");
+        "Add/Remove Rules": () => {
+            const plugin = Vencord.Plugins.plugins.TextReplace;
+            if (!plugin) return;
+            Vencord.Plugins.plugins
             openModal(modalProps => (
-                <PluginModal {...modalProps} plugin={ Object.values(Vencord.Plugins.plugins)[pluginIndex]} onRestartNeeded={() => null} />
+                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
             ));
         },
     },

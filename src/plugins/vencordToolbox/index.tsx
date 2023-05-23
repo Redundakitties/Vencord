@@ -18,22 +18,70 @@
 
 import "./index.css";
 
+import { definePluginSettings } from "@api/Settings";
 import { openNotificationLogModal } from "@api/Notifications/notificationLog";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import { LazyComponent } from "@utils/react";
-import definePlugin from "@utils/types";
+import definePlugin, { OptionType } from "@utils/types";
 import { findByCode } from "@webpack";
 import { Menu, Popout, useState } from "@webpack/common";
 import type { ReactNode } from "react";
+import { openModal } from "@utils/modal";
+import PluginModal from "@components/PluginSettings/PluginModal";
+import { openUpdaterModal } from "@components/VencordSettings/UpdaterTab";
 
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 
+const settings = definePluginSettings({
+    QuickCSS: {
+        type: OptionType.BOOLEAN,
+        description: "Open QuickCSS",
+        default: true,
+    },
+    Notifications: {
+        type: OptionType.BOOLEAN,
+        description: "Open Notification Log",
+        default: true,
+    },
+    UpdaterTab: {
+        type: OptionType.BOOLEAN,
+        description: "Open Updater Modal",
+        default: true,
+    },
+    BadgeAPI: {
+        type: OptionType.BOOLEAN,
+        description: "BadgeAPI settings",
+        default: true,
+    },
+    DevCompanion: {
+        type: OptionType.BOOLEAN,
+        description: "DevCompanion settings",
+        default: true,
+    },
+    TextReplace: {
+        type: OptionType.BOOLEAN,
+        description: "TextReplace settings",
+        default: true,
+    },
+    VencordToolbox: {
+        type: OptionType.BOOLEAN,
+        description: "VencordToolbox settings",
+        default: true,
+    },
+})
+
 function VencordPopout(onClose: () => void) {
     const pluginEntries = [] as ReactNode[];
+    const excludedPluginNames = [] as string[];
+    for (const [settingsName, enabled] of Object.entries(settings.store)) {
+        if (!enabled) {
+            excludedPluginNames.push(settingsName);
+        }
+    }
 
     for (const plugin of Object.values(Vencord.Plugins.plugins)) {
-        if (plugin.toolboxActions) {
+        if (plugin.toolboxActions && !excludedPluginNames.includes(plugin.name)) {
             pluginEntries.push(
                 <Menu.MenuGroup
                     label={plugin.name}
@@ -59,20 +107,34 @@ function VencordPopout(onClose: () => void) {
     return (
         <Menu.Menu
             navId="vc-toolbox"
-            onClose={onClose}
-        >
-            <Menu.MenuItem
-                id="vc-toolbox-notifications"
-                label="Open Notification Log"
-                action={openNotificationLogModal}
-            />
-            <Menu.MenuItem
-                id="vc-toolbox-quickcss"
-                label="Open QuickCSS"
-                action={() => VencordNative.quickCss.openEditor()}
-            />
+            onClose={onClose}>
+
+            {settings.store.Notifications &&
+                <Menu.MenuItem
+                    id="vc-toolbox-notifications"
+                    label="Open Notification Log"
+                    action={openNotificationLogModal}
+                />
+            }
+
+            {settings.store.QuickCSS &&
+                <Menu.MenuItem
+                    id="vc-toolbox-quickcss"
+                    label="Open QuickCSS"
+                    action={() => VencordNative.quickCss.openEditor()}
+                />
+            }
+
+            {settings.store.UpdaterTab &&
+                <Menu.MenuItem
+                    id="vc-toolbox-updater-tab"
+                    label="Open Updater"
+                    action={openUpdaterModal}
+                /> }
+
             {...pluginEntries}
         </Menu.Menu>
+
     );
 }
 
@@ -124,6 +186,18 @@ export default definePlugin({
     name: "VencordToolbox",
     description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions",
     authors: [Devs.Ven, Devs.AutumnVN],
+    settings,
+
+    toolboxActions: {
+        "Enabled/Disable Entries": () => {
+            const plugin = Vencord.Plugins.plugins.VencordToolbox;
+            if (!plugin) return;
+            Vencord.Plugins.plugins
+            openModal(modalProps => (
+                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
+            ));
+        },
+    },
 
     patches: [
         {
