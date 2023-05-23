@@ -25,6 +25,8 @@ import { Logger } from "@utils/Logger";
 import { useForceUpdater } from "@utils/react";
 import definePlugin, { OptionType } from "@utils/types";
 import { Button, Forms, React, TextInput, useState } from "@webpack/common";
+import { openModal } from "@utils/modal";
+import PluginModal from "@components/PluginSettings/PluginModal";
 
 const STRING_RULES_KEY = "TextReplace_rulesString";
 const REGEX_RULES_KEY = "TextReplace_rulesRegex";
@@ -251,6 +253,15 @@ export default definePlugin({
     dependencies: ["MessageEventsAPI"],
 
     settings,
+
+    toolboxActions: {
+        "Open Settings": () => {
+            const pluginIndex = Object.values(Vencord.Plugins.plugins).findIndex(plugin => plugin.name === "TextReplace");
+            openModal(modalProps => (
+                <PluginModal {...modalProps} plugin={ Object.values(Vencord.Plugins.plugins)[pluginIndex]} onRestartNeeded={() => null} />
+            ));
+        },
+    },
 
     async start() {
         stringRules = await DataStore.get(STRING_RULES_KEY) ?? makeEmptyRuleArray();
