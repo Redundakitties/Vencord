@@ -146,7 +146,6 @@ const settings = definePluginSettings({
 
 function VencordPopout(onClose: () => void) {
     const pluginMiscEntries = [] as ReactNode[]; // for misc plugin actions
-    const pluginSettingsEntries = [] as ReactNode[]; // for plugin settings
 
     const includedPlugins = [] as string[];
 
@@ -321,17 +320,6 @@ export default definePlugin({
     description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions",
     authors: [Devs.Ven, Devs.AutumnVN],
     settings,
-
-    toolboxActions: {
-        "Enabled/Disable Entries": () => {
-            const plugin = Vencord.Plugins.plugins.VencordToolbox;
-            if (!plugin) return;
-            openModal(modalProps => (
-                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
-            ));
-
-        },
-    },
 
     patches: [
         {
