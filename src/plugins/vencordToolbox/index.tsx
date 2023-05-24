@@ -35,50 +35,109 @@ const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".too
 
 const settings = definePluginSettings({
     QuickCSS: {
-        type: OptionType.BOOLEAN,
+        type: OptionType.COMPONENT,
         description: "Open QuickCSS",
         default: true,
+        component: () =>
+        <Switch
+            value={settings.store.QuickCSS}
+            onChange={(v: boolean) => settings.store.QuickCSS = v}
+            note="Displays QuickCSS entry in toolbox"
+        >
+            Add QuickCSS
+        </Switch>
+    },
+    disableQuickCSS: {
+        type: OptionType.COMPONENT,
+        description: "Disable QuickCSS",
+        default: true,
+        component: () =>
+        <Switch
+            value={settings.store.disableQuickCSS}
+            onChange={(v: boolean) => settings.store.disableQuickCSS = v}
+            note="Displays quick enable/disable QuickCSS in toolbox"
+        >
+            Add Enable/Disable QuickCSS toggle
+        </Switch>
     },
     Notifications: {
-        type: OptionType.BOOLEAN,
+        type: OptionType.COMPONENT,
         description: "Open Notification Log",
         default: true,
-    },
-    // UpdaterTab: {
-    //     type: OptionType.BOOLEAN,
-    //     description: "Open Updater Modal",
-    //     default: true,
-    // },
-    BadgeAPI: {
-        type: OptionType.BOOLEAN,
-        description: "BadgeAPI settings",
-        default: true,
-    },
-    DevCompanion: {
-        type: OptionType.BOOLEAN,
-        description: "DevCompanion settings",
-        default: true,
-    },
-    TextReplace: {
-        type: OptionType.BOOLEAN,
-        description: "TextReplace settings",
-        default: true,
-    },
-    VencordToolbox: {
-        type: OptionType.BOOLEAN,
-        description: "VencordToolbox settings",
-        default: true,
+        component: () =>
+        <Switch
+            value={settings.store.Notifications}
+            onChange={(v: boolean) => settings.store.Notifications = v}
+            note="Displays Notifications Log entry in toolbox"
+        >
+            Add Notification Log
+        </Switch>
     },
     UpdaterTab: {
         type: OptionType.COMPONENT,
-        description: "Add Updater to toolbox",
+        description: "Add Updater",
+        default: false,
         component: () =>
         <Switch
             value={settings.store.UpdaterTab}
             onChange={(v: boolean) => settings.store.UpdaterTab = v}
             disabled={IS_WEB}
+            note="Displays UpdaterTab entry in toolbox"
         >
-            Add Updater to toolbox
+            Add UpdaterTab
+        </Switch>
+    },
+    BadgeAPI: {
+        type: OptionType.COMPONENT,
+        description: "BadgeAPI settings",
+        default: true,
+        component: () =>
+        <Switch
+            value={settings.store.BadgeAPI}
+            onChange={(v: boolean) => settings.store.BadgeAPI = v}
+            note="Displays BadgeAPI entry in toolbox"
+        >
+            Add BadgeAPI
+        </Switch>
+    },
+    DevCompanion: {
+        type: OptionType.COMPONENT,
+        description: "DevCompanion settings",
+        default: true,
+        component: () =>
+        <Switch
+            value={settings.store.DevCompanion}
+            onChange={(v: boolean) => settings.store.DevCompanion = v}
+            note="Displays DevCompanion Reconnect entry in toolbox"
+        >
+            Add DevCompanion
+        </Switch>
+    },
+    PluginSettings: {
+        type: OptionType.COMPONENT,
+        description: "Plugin Settings",
+        default: true,
+        component: () =>
+        <Switch
+            value={settings.store.PluginSettings}
+            onChange={(v: boolean) => settings.store.PluginSettings = v}
+            note="Displays Plugin Settings group which allows you to add or remove plugin settings from the toolbox"
+        >
+            Add or Remove Plugin Settings
+        </Switch>
+
+    },
+    VencordToolbox: {
+        type: OptionType.COMPONENT,
+        description: "VencordToolbox",
+        default: true,
+        component: () =>
+        <Switch
+            value={settings.store.VencordToolbox}
+            onChange={(v: boolean) => settings.store.VencordToolbox = v}
+            note="Displays VencordToolbox entry in toolbox"
+        >
+            Add VencordToolbox
         </Switch>
     },
 })
@@ -137,14 +196,40 @@ function VencordPopout(onClose: () => void) {
                 />
             }
 
+            {settings.store.disableQuickCSS &&
+                <Menu.MenuItem
+                    id="vc-toolbox-disable-quickcss"
+                    label="Enable/Disable QuickCSS"
+                    action={ () => {Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
+                />
+            }
+
             {!IS_WEB && settings.store.UpdaterTab &&
                 <Menu.MenuItem
                     id="vc-toolbox-updater-tab"
                     label="Open Updater"
                     action={openUpdaterModal}
-                /> }
+                />}
 
             {...pluginEntries}
+
+            {settings.store.PluginSettings &&
+                <Menu.MenuGroup label="Plugin Settings">
+                    <Menu.MenuItem
+                        id="vc-toolbox-plugins"
+                        label="Add or Remove Plugins"
+                    >
+                        {Object.values(Vencord.Plugins.plugins).filter(p => p.options && Vencord.Plugins.isPluginEnabled(p.name)).map(p => (
+                            <Menu.MenuCheckboxItem
+                                label={p.name}
+                                id={p.name}
+                                key={p.name}
+                                checked={false}
+                                action={}
+                            />
+                        ))}
+                    </Menu.MenuItem>
+                </Menu.MenuGroup>}
         </Menu.Menu>
 
     );
@@ -204,10 +289,10 @@ export default definePlugin({
         "Enabled/Disable Entries": () => {
             const plugin = Vencord.Plugins.plugins.VencordToolbox;
             if (!plugin) return;
-            Vencord.Plugins.plugins
             openModal(modalProps => (
                 <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
             ));
+
         },
     },
 

@@ -258,7 +258,7 @@ export default definePlugin({
         "Add/Remove Rules": () => {
             const plugin = Vencord.Plugins.plugins.TextReplace;
             if (!plugin) return;
-            Vencord.Plugins.plugins
+            
             openModal(modalProps => (
                 <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
             ));
