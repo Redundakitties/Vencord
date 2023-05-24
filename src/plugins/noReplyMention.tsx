@@ -20,8 +20,6 @@ import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import type { Message } from "discord-types/general";
-import { openModal } from "@utils/modal";
-import PluginModal from "@components/PluginSettings/PluginModal";
 
 const settings = definePluginSettings({
     userList: {
@@ -57,16 +55,6 @@ export default definePlugin({
     description: "Disables reply pings by default",
     authors: [Devs.DustyAngel47, Devs.axyie, Devs.pylix, Devs.outfoxxed],
     settings,
-
-    toolboxActions: {
-        "NoReplyMention": () => {
-            const plugin = Vencord.Plugins.plugins.QuickReply;
-            if (!plugin) return;
-            openModal(modalProps => (
-                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null}/>
-            ));
-        }
-    },
 
     shouldMention(message: Message, isHoldingShift: boolean) {
         const isListed = settings.store.userList.includes(message.author.id);
