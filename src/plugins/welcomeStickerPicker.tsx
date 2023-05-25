@@ -43,7 +43,12 @@ const settings = definePluginSettings({
             { label: "Normal Message (you can greet spam)", value: GreetMode.NormalMessage }
         ],
         description: "Choose the greet mode"
-    }
+    },
+    unholyMultiGreetEnabled: {
+        type: OptionType.BOOLEAN,
+        description: "Unholy greet mode",
+        default: false,
+    },
 });
 
 const MessageActions = findByPropsLazy("sendGreetMessage");
@@ -73,8 +78,8 @@ function greet(channel: Channel, message: Message, stickers: string[]) {
 
 
 function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], message: Message, channel: Channel; }) {
-    const s = settings.use(["greetMode", "multiGreetChoices"] as any) as { greetMode: GreetMode, multiGreetChoices: string[]; };
-    const { greetMode, multiGreetChoices = [] } = s;
+    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; };
+    const { includedPlugins = [] } = ps;
 
     return (
         <Menu.Menu
@@ -85,16 +90,6 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
             <Menu.MenuGroup
                 label="Greet Mode"
             >
-                {Object.values(GreetMode).map(mode => (
-                    <Menu.MenuRadioItem
-                        key={mode}
-                        group="greet-mode"
-                        id={"greet-mode-" + mode}
-                        label={mode}
-                        checked={mode === greetMode}
-                        action={() => s.greetMode = mode}
-                    />
-                ))}
             </Menu.MenuGroup>
 
             <Menu.MenuSeparator />
@@ -112,7 +107,7 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
                 ))}
             </Menu.MenuGroup>
 
-            {!(settings.store as any).unholyMultiGreetEnabled ? null : (
+            {!settings.store.unholyMultiGreetEnabled ? null : (
                 <>
                     <Menu.MenuSeparator />
 
@@ -121,7 +116,7 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
                         id="unholy-multi-greet"
                     >
                         {stickers.map(sticker => {
-                            const checked = multiGreetChoices.some(s => s === sticker.id);
+                            const checked = includedPlugins.some(s => s === sticker.id);
 
                             return (
                                 <Menu.MenuCheckboxItem
@@ -129,11 +124,10 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
                                     id={"multi-greet-" + sticker.id}
                                     label={sticker.description.split(" ")[0]}
                                     checked={checked}
-                                    disabled={!checked && multiGreetChoices.length >= 3}
                                     action={() => {
-                                        s.multiGreetChoices = checked
-                                            ? multiGreetChoices.filter(s => s !== sticker.id)
-                                            : [...multiGreetChoices, sticker.id];
+                                        ps.includedPlugins = checked
+                                            ? includedPlugins.filter(s => s !== sticker.id)
+                                            : [...includedPlugins, sticker.id];
                                     }}
                                 />
                             );
@@ -143,8 +137,8 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
                         <Menu.MenuItem
                             id="multi-greet-submit"
                             label="Send Greets"
-                            action={() => greet(channel, message, multiGreetChoices!)}
-                            disabled={multiGreetChoices.length === 0}
+                            action={() => greet(channel, message, includedPlugins!)}
+                            disabled={includedPlugins.length === 0}
                         />
 
                     </Menu.MenuItem>
