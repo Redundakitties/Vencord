@@ -148,7 +148,7 @@ const settings = definePluginSettings({
     },
 });
 
-function VencordPopout({ onClose }: { onClose: () => void; }) { // could be what's causing bot problem
+function VencordPopout({ onClose }: { onClose: () => void; }) {
     const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; }; // keeps track of added plugin settings entries
     const { includedPlugins = [] } = ps;
     const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added quick actions
@@ -331,7 +331,7 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
 export default definePlugin({
     name: "VencordToolbox",
     description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions.",
-    authors: [Devs.Ven, Devs.AutumnVN],
+    authors: [Devs.Ven, Devs.AutumnVN, Devs.GracefulLion],
     settings,
 
     patches: [
