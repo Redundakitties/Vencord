@@ -330,7 +330,7 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
 
 export default definePlugin({
     name: "VencordToolbox",
-    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions. \n\nNote: When changing some settings of some plugins will not prompt to restart so you should remember to on your own :)",
+    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions.",
     authors: [Devs.Ven, Devs.AutumnVN],
     settings,
 
