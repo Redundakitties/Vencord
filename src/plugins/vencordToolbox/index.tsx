@@ -235,8 +235,8 @@ function VencordPopout({ onClose }: { onClose: () => void; }) { // could be what
                             .map(plugin => {
                                 return (
                                     <Menu.MenuItem
-                                        id={"vc-toolbox-" + plugin.name}
-                                        key={"vc-toolbox-key-" + plugin.name}
+                                        id={"vc-toolbox-checkbox-" + plugin.name}
+                                        key={"vc-toolbox-checkbox-key-" + plugin.name}
                                         label={plugin.name}
                                         action={() => {
                                             openModal(modalProps => (
@@ -266,8 +266,8 @@ function VencordPopout({ onClose }: { onClose: () => void; }) { // could be what
                             const checked = includedPlugins.some(p => p === plugin.name);
                             return (
                                 <Menu.MenuCheckboxItem
-                                    key={"vc-toolbox-key-" + plugin.name}
-                                    id={"vc-toolbox-" + plugin.name}
+                                    key={"vc-toolbox-settings-key-" + plugin.name}
+                                    id={"vc-toolbox-settings-" + plugin.name}
                                     label={plugin.name}
                                     checked={checked}
                                     action={() => { // when checked adds plugin to toolbox
