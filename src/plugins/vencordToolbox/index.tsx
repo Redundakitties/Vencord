@@ -35,6 +35,7 @@ import type { ReactNode } from "react";
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 
 const settings = definePluginSettings({
+    // for enabling and disabling Vencord-wide toolbox actions
     RelaunchDiscord: {
         type: OptionType.COMPONENT,
         description: "Relaunch Discord",
@@ -102,6 +103,8 @@ const settings = definePluginSettings({
             UpdaterTab
             </Switch>
     },
+
+    // for enabling and disabling misc plugin toolbox actions
     BadgeAPI: {
         type: OptionType.COMPONENT,
         description: "BadgeAPI settings",
@@ -128,6 +131,7 @@ const settings = definePluginSettings({
             DevCompanion
             </Switch>
     },
+    // For enabling and disabling individual plugin settings menus
     PluginSettings: {
         type: OptionType.COMPONENT,
         description: "Plugin Settings",
@@ -142,79 +146,19 @@ const settings = definePluginSettings({
             </Switch>
 
     },
-    TextReplace: {
-        type: OptionType.COMPONENT,
-        description: "description",
-        default: true,
-        component: () =>
-            <Switch
-                value={settings.store.TextReplace}
-                onChange={(v: boolean) => settings.store.TextReplace = v}
-                note="placheolder note"
-            >
-            TextReplace
-            </Switch>
-
-    },
 });
 
-function VencordPopout(onClose: () => void) {
+function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's causing bot problem
     const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; };
     const { includedPlugins = [] } = ps;
+    const pluginEnabledEntries = [] as string[];
 
-    const pluginMiscEntries = [] as ReactNode[]; // for misc plugin actions
-    const pluginSettingsEntries = [] as ReactNode[]; // for settings plugin actions
-
-    // let includedPlugins = [] as string[];
-
-    // for (const [settingsName, enabled] of Object.entries(settings.store)) {
-    //     if (enabled) {
-    //         includedPlugins.push(settingsName);
-    //     }
-    // }
-    // for misc plugin actions ex) badge api & devcompanion
-
-    // (and make sure to add back included plugins check)
-    for (const plugin of Object.values(Vencord.Plugins.plugins)) {
-        if (plugin.toolboxActions && Vencord.Plugins.isPluginEnabled(plugin.name)) {
-            pluginMiscEntries.push(
-                <Menu.MenuGroup
-                    label={plugin.name}
-                    key={`vc-toolbox-${plugin.name}`}
-                >
-                    {Object.entries(plugin.toolboxActions).map(([text, action]) => {
-                        const key = `vc-toolbox-${plugin.name}-${text}`;
-
-                        return (
-                            <Menu.MenuItem
-                                id={key}
-                                key={key}
-                                label={text}
-                                action={action}
-                            />
-                        );
-                    })}
-                </Menu.MenuGroup>
-            );
+    // for Vencord actions ex) quickCss and Updater
+    for (const [settingsName, enabled] of Object.entries(settings.store)) {
+        if (enabled) {
+            pluginEnabledEntries.push(settingsName);
         }
     }
-
-    // for (const plugin of Object.values(Vencord.Plugins.plugins)) {
-    //     if (includedPlugins.includes(plugin.name)) {
-    //         pluginSettingsEntries.push(
-    //             <Menu.MenuItem
-    //                 id={"vc-toolbox-" + plugin.name}
-    //                 key={"vc-toolbox-key-" + plugin.name}
-    //                 label={plugin.name}
-    //                 action={() => {
-    //                     openModal(modalProps => (
-    //                         <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
-    //                     ));
-    //                 }}
-    //             />
-    //         );
-    //     }
-    // }
 
     return (
         <Menu.Menu
@@ -260,12 +204,55 @@ function VencordPopout(onClose: () => void) {
                         action={openUpdaterModal}
                     />
                 }
+                {settings.store.PluginSettings &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-clear-plugins"
+                        label="Clear settings plugins"
+                        action={() => ps.includedPlugins = []}
+                    />
+                }
             </Menu.MenuGroup>
 
-            {...pluginMiscEntries}
+            {Object.values(Vencord.Plugins.plugins)
+                .filter(plugin => plugin.toolboxActions && Vencord.Plugins.isPluginEnabled(plugin.name) && pluginEnabledEntries.includes(plugin.name))
+                .map(plugin => (
+                    <Menu.MenuGroup
+                        label={plugin.name}
+                        key={`vc-toolbox-${plugin.name}`}>
+                        {plugin.toolboxActions && Object.entries(plugin.toolboxActions).map(([text, action]) => {
+                            const key = `vc-toolbox-${plugin.name}-${text}`;
+                            return (
+                                <Menu.MenuItem
+                                    id={key}
+                                    key={key}
+                                    label={text}
+                                    action={action}
+                                />
+                            );
+                        })}
+                    </Menu.MenuGroup>
+                ))
+            }
 
-            {settings.store.PluginSettings &&
+            {settings.store.PluginSettings && // Main plugin setttings dropdown w/ checkboxes
                 <Menu.MenuGroup label="Plugin Settings">
+                    {settings.store.PluginSettings &&
+                    Object.values(Vencord.Plugins.plugins)
+                        .filter(plugin => includedPlugins.includes(plugin.name))
+                        .map(plugin => {
+                            return (
+                                <Menu.MenuItem
+                                    id={"vc-toolbox-" + plugin.name}
+                                    key={"vc-toolbox-key-" + plugin.name}
+                                    label={plugin.name}
+                                    action={() => {
+                                        openModal(modalProps => (
+                                            <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
+                                        ));
+                                    }}
+                                />
+                            );
+                        })}
                     <Menu.MenuItem
                         id="vc-toolbox-plugins"
                         label="Add or Remove Plugins">
@@ -288,8 +275,6 @@ function VencordPopout(onClose: () => void) {
                     </Menu.MenuItem>
 
                 </Menu.MenuGroup>}
-
-            {...pluginSettingsEntries}
 
         </Menu.Menu>
 
@@ -314,7 +299,7 @@ function VencordPopoutButton() {
             animation={Popout.Animation.NONE}
             shouldShow={show}
             onRequestClose={() => setShow(false)}
-            renderPopout={() => VencordPopout(() => setShow(false))}
+            renderPopout={() => <VencordPopout onClose={() => setShow(false)} />}
         >
             {(_, { isShown }) => (
                 <HeaderBarIcon
@@ -345,17 +330,6 @@ export default definePlugin({
     description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions",
     authors: [Devs.Ven, Devs.AutumnVN],
     settings,
-
-    toolboxActions: {
-        "Enabled/Disable Entries": () => {
-            const plugin = Vencord.Plugins.plugins.VencordToolbox;
-            if (!plugin) return;
-            openModal(modalProps => (
-                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => null} />
-            ));
-
-        },
-    },
 
     patches: [
         {

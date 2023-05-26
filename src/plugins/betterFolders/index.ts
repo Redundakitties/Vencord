@@ -23,10 +23,8 @@ import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy, findLazy, findStoreLazy } from "@webpack";
 import { FluxDispatcher } from "@webpack/common";
-import FolderSideBar from "./FolderSideBar";
 
-let isEscapePressed = false;
-const keydown = (e: KeyboardEvent) => e.key === "Escape" && (isEscapePressed = true);
+import FolderSideBar from "./FolderSideBar";
 
 const GuildsTree = findLazy(m => m.prototype?.convertToFolder);
 const GuildFolderStore = findStoreLazy("SortedGuildStore");
@@ -188,9 +186,9 @@ export default definePlugin({
 
 function onKeydown(e: KeyboardEvent) {
     if (settings.store.closeAllEscape) {
-        if (e.key == "Escape") {
+        if (e.key === "Escape") {
             for (const id of ExpandedFolderStore.getExpandedFolders())
-            FolderUtils.toggleGuildFolderExpand(id);
+                FolderUtils.toggleGuildFolderExpand(id);
         }
     }
 }
