@@ -22,10 +22,11 @@ import { Flex } from "@components/Flex";
 import { Link } from "@components/Link";
 import { Margins } from "@utils/margins";
 import { classes } from "@utils/misc";
+import { closeModal, ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { useAwaiter } from "@utils/react";
 import { changes, checkForUpdates, getRepo, isNewer, update, updateError, UpdateLogger } from "@utils/updater";
-import { Alerts, Button, Card, Forms, Parser, React, Switch, Toasts } from "@webpack/common";
+import { Alerts, Button, Card, Forms, Parser, React, Switch, Text, Toasts } from "@webpack/common";
 
 import gitHash from "~git-hash";
 
@@ -247,6 +248,62 @@ function Updater() {
             {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
         </SettingsTab>
     );
+}
+
+function UpdaterModal ({ modalProps, close }: { modalProps: ModalProps; close(): void; }) {
+    const [repo, err, repoPending] = useAwaiter(getRepo, { fallbackValue: "Loading..." });
+
+    React.useEffect(() => {
+        if (err)
+            UpdateLogger.error("Failed to retrieve repo", err);
+    }, [err]);
+
+    const commonProps: CommonProps = {
+        repo,
+        repoPending
+    };
+
+    return (
+        <ModalRoot {...modalProps} size={ModalSize.LARGE}>
+            <ModalHeader>
+                <Text variant="heading-lg/semibold" style={{ flexGrow: 1 }}>Vencord Updater</Text>
+                <ModalCloseButton onClick={close} />
+            </ModalHeader>
+
+            <ModalContent>
+                <Forms.FormTitle tag="h5">Repo</Forms.FormTitle>
+                <Forms.FormText className="vc-text-selectable">
+                    {repoPending
+                        ? repo
+                        : err
+                            ? "Failed to retrieve - check console"
+                            : (
+                                <Link href={repo}>
+                                    {repo.split("/").slice(-2).join("/")}
+                                </Link>
+                            )
+                    }
+                    {" "}(<HashLink hash={gitHash} repo={repo} disabled={repoPending} />)
+                </Forms.FormText>
+
+                <Forms.FormDivider className={Margins.top8 + " " + Margins.bottom8} />
+
+                <Forms.FormTitle tag="h5">Updates</Forms.FormTitle>
+
+                {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
+            </ModalContent>
+
+        </ModalRoot>
+    );
+}
+
+export function openUpdaterModal() {
+    const key = openModal(modalProps => (
+        <UpdaterModal
+            modalProps={modalProps}
+            close={() => closeModal(key)}
+        />
+    ));
 }
 
 export default IS_WEB ? null : wrapTab(Updater, "Updater");
