@@ -29,7 +29,7 @@ import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByCode } from "@webpack";
-import { Menu, Popout, Switch,useState } from "@webpack/common";
+import { Menu, Popout, Switch, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
@@ -148,7 +148,7 @@ const settings = definePluginSettings({
     },
 });
 
-function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's causing bot problem
+function VencordPopout({ onClose } : {onClose: () => void}) {
     const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; }; // keeps track of added plugin settings entries
     const { includedPlugins = [] } = ps;
     const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added quick actions
@@ -318,7 +318,7 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
 export default definePlugin({
     name: "VencordToolbox",
     description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions. \n\nNote: When changing some settings of some plugins will not prompt to restart so you should remember to on your own :)",
-    authors: [Devs.Ven, Devs.AutumnVN],
+    authors: [Devs.Ven, Devs.AutumnVN, Devs.GracefulLion],
     settings,
 
     patches: [
