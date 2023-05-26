@@ -149,11 +149,11 @@ const settings = definePluginSettings({
 });
 
 function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's causing bot problem
-    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; };
+    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; }; // keeps track of added settings entries
     const { includedPlugins = [] } = ps;
-    const pluginEnabledEntries = [] as string[];
+    const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added entries
 
-    // for Vencord actions ex) quickCss and Updater
+    // for Vencord-wide actions ex) quickCss, updater, notification log
     for (const [settingsName, enabled] of Object.entries(settings.store)) {
         if (enabled) {
             pluginEnabledEntries.push(settingsName);
@@ -206,7 +206,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                 }
             </Menu.MenuGroup>
 
-            {Object.values(Vencord.Plugins.plugins)
+            {Object.values(Vencord.Plugins.plugins) // misc plugin toolbox actions ex) DevCompanion
                 .filter(plugin => plugin.toolboxActions && Vencord.Plugins.isPluginEnabled(plugin.name) && pluginEnabledEntries.includes(plugin.name))
                 .map(plugin => (
                     <Menu.MenuGroup
@@ -257,7 +257,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                                     id={"vc-toolbox-" + plugin.name}
                                     label={plugin.name}
                                     checked={checked}
-                                    action={() => {
+                                    action={() => { // when checked adds plugin to toolbox
                                         ps.includedPlugins = checked
                                             ? includedPlugins.filter(p => p !== plugin.name)
                                             : [...includedPlugins, plugin.name];
@@ -266,11 +266,8 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                             );
                         })}
                     </Menu.MenuItem>
-
                 </Menu.MenuGroup>}
-
         </Menu.Menu>
-
     );
 }
 
