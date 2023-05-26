@@ -204,13 +204,6 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                         action={openUpdaterModal}
                     />
                 }
-                {settings.store.PluginSettings &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-clear-plugins"
-                        label="Clear settings plugins"
-                        action={() => ps.includedPlugins = []}
-                    />
-                }
             </Menu.MenuGroup>
 
             {Object.values(Vencord.Plugins.plugins)
