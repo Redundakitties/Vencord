@@ -35,7 +35,7 @@ import type { ReactNode } from "react";
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 
 const settings = definePluginSettings({
-    // for enabling and disabling Vencord-wide toolbox actions
+    // for enabling and disabling Vencord-wide quick actions
     RelaunchDiscord: {
         type: OptionType.COMPONENT,
         description: "Relaunch Discord",
@@ -104,7 +104,7 @@ const settings = definePluginSettings({
             </Switch>
     },
 
-    // for enabling and disabling misc plugin toolbox actions
+    // for enabling and disabling misc plugin quick actions
     BadgeAPI: {
         type: OptionType.COMPONENT,
         description: "BadgeAPI settings",
@@ -149,11 +149,11 @@ const settings = definePluginSettings({
 });
 
 function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's causing bot problem
-    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; }; // keeps track of added settings entries
+    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; }; // keeps track of added plugin settings entries
     const { includedPlugins = [] } = ps;
-    const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added entries
+    const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added quick actions
 
-    // for Vencord-wide actions ex) quickCss, updater, notification log
+    // for Vencord-wide quick actions ex) quickCss, updater, notification log
     for (const [settingsName, enabled] of Object.entries(settings.store)) {
         if (enabled) {
             pluginEnabledEntries.push(settingsName);
@@ -206,7 +206,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                 }
             </Menu.MenuGroup>
 
-            {Object.values(Vencord.Plugins.plugins) // misc plugin toolbox actions ex) DevCompanion
+            {Object.values(Vencord.Plugins.plugins) // misc plugin quick actions ex) DevCompanion and BadgesAPI
                 .filter(plugin => plugin.toolboxActions && Vencord.Plugins.isPluginEnabled(plugin.name) && pluginEnabledEntries.includes(plugin.name))
                 .map(plugin => (
                     <Menu.MenuGroup
@@ -317,7 +317,7 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
 
 export default definePlugin({
     name: "VencordToolbox",
-    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions",
+    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions. \n\nNote: When changing some settings of some plugins will not prompt to restart so you should remember to on your own :)",
     authors: [Devs.Ven, Devs.AutumnVN],
     settings,
 
