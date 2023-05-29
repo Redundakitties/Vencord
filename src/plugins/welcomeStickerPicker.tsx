@@ -78,8 +78,8 @@ function greet(channel: Channel, message: Message, stickers: string[]) {
 
 
 function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], message: Message, channel: Channel; }) {
-    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; };
-    const { includedPlugins = [] } = ps;
+    const s = settings.use(["greetMode", "multiGreetChoices"] as any) as unknown as { greetMode: GreetMode, multiGreetChoices: string[]; };
+    const { greetMode, multiGreetChoices = [] } = s;
 
     return (
         <Menu.Menu
