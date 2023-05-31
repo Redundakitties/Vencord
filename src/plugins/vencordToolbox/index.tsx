@@ -161,7 +161,7 @@ const settings = definePluginSettings({
     },
 });
 
-function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's causing bot problem
+function VencordPopout({ onClose } : {onClose: () => void}) {
     const ps = settings.use(["includedPlugins", "disabledPlugins"] as any) as unknown as { includedPlugins: string[], disabledPlugins: string[]; }; // keeps track of added plugin settings entries
     const { includedPlugins = [], disabledPlugins = [] } = ps;
     const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added quick actions
