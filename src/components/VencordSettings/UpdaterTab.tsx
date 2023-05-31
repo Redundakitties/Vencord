@@ -183,9 +183,7 @@ function Newer(props: CommonProps) {
     );
 }
 
-function Updater() {
-    const settings = useSettings(["notifyAboutUpdates", "autoUpdate", "autoUpdateNotification"]);
-
+function updaterBody() {
     const [repo, err, repoPending] = useAwaiter(getRepo, { fallbackValue: "Loading..." });
 
     React.useEffect(() => {
@@ -197,6 +195,33 @@ function Updater() {
         repo,
         repoPending
     };
+
+    return (
+        <>
+            <Forms.FormTitle tag="h5">Repo</Forms.FormTitle>
+            <Forms.FormText className="vc-text-selectable">
+                {repoPending
+                    ? repo
+                    : err
+                        ? "Failed to retrieve - check console"
+                        : (
+                            <Link href={repo}>
+                                {repo.split("/").slice(-2).join("/")}
+                            </Link>
+                        )}
+                {" "}(<HashLink hash={gitHash} repo={repo} disabled={repoPending} />)
+            </Forms.FormText>
+            <Forms.FormDivider className={Margins.top8 + " " + Margins.bottom8} />
+            <Forms.FormTitle tag="h5">Updates</Forms.FormTitle>
+
+            {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
+        </>
+    );
+}
+
+function Updater() {
+    const settings = useSettings(["notifyAboutUpdates", "autoUpdate", "autoUpdateNotification"]);
+    const updaterContent = updaterBody();
 
     return (
         <SettingsTab title="Vencord Updater">
@@ -225,44 +250,13 @@ function Updater() {
                 Get notified when an automatic update completes
             </Switch>
 
-            <Forms.FormTitle tag="h5">Repo</Forms.FormTitle>
-
-            <Forms.FormText className="vc-text-selectable">
-                {repoPending
-                    ? repo
-                    : err
-                        ? "Failed to retrieve - check console"
-                        : (
-                            <Link href={repo}>
-                                {repo.split("/").slice(-2).join("/")}
-                            </Link>
-                        )
-                }
-                {" "}(<HashLink hash={gitHash} repo={repo} disabled={repoPending} />)
-            </Forms.FormText>
-
-            <Forms.FormDivider className={Margins.top8 + " " + Margins.bottom8} />
-
-            <Forms.FormTitle tag="h5">Updates</Forms.FormTitle>
-
-            {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
+            {updaterContent}
         </SettingsTab>
     );
 }
 
 function UpdaterModal ({ modalProps, close }: { modalProps: ModalProps; close(): void; }) {
-    const [repo, err, repoPending] = useAwaiter(getRepo, { fallbackValue: "Loading..." });
-
-    React.useEffect(() => {
-        if (err)
-            UpdateLogger.error("Failed to retrieve repo", err);
-    }, [err]);
-
-    const commonProps: CommonProps = {
-        repo,
-        repoPending
-    };
-
+    const updaterContent = updaterBody();
     return (
         <ModalRoot {...modalProps} size={ModalSize.LARGE}>
             <ModalHeader>
@@ -271,26 +265,7 @@ function UpdaterModal ({ modalProps, close }: { modalProps: ModalProps; close():
             </ModalHeader>
 
             <ModalContent>
-                <Forms.FormTitle tag="h5">Repo</Forms.FormTitle>
-                <Forms.FormText className="vc-text-selectable">
-                    {repoPending
-                        ? repo
-                        : err
-                            ? "Failed to retrieve - check console"
-                            : (
-                                <Link href={repo}>
-                                    {repo.split("/").slice(-2).join("/")}
-                                </Link>
-                            )
-                    }
-                    {" "}(<HashLink hash={gitHash} repo={repo} disabled={repoPending} />)
-                </Forms.FormText>
-
-                <Forms.FormDivider className={Margins.top8 + " " + Margins.bottom8} />
-
-                <Forms.FormTitle tag="h5">Updates</Forms.FormTitle>
-
-                {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
+                {updaterContent}
             </ModalContent>
 
         </ModalRoot>
