@@ -45,7 +45,7 @@ const settings = definePluginSettings({
                 value={settings.store.RelaunchDiscord}
                 onChange={(v: boolean) => settings.store.RelaunchDiscord = v}
                 disabled={IS_WEB}
-                note="Display Relaunch Discord entry in toolbox"
+                note="Quits and restarts discord"
             >
             Relaunch Discord
             </Switch>
@@ -58,35 +58,48 @@ const settings = definePluginSettings({
             <Switch
                 value={settings.store.Notifications}
                 onChange={(v: boolean) => settings.store.Notifications = v}
-                note="Display Notifications Log entry in toolbox"
+                note="Opens notification log from toolbox"
             >
             Notification Log
             </Switch>
     },
     QuickCSS: {
         type: OptionType.COMPONENT,
-        description: "Open QuickCSS",
+        description: "Open QuickCss",
         default: true,
         component: () =>
             <Switch
                 value={settings.store.QuickCSS}
                 onChange={(v: boolean) => settings.store.QuickCSS = v}
-                note="Display QuickCSS entry in toolbox"
+                note="Open QuickCss from toolbox"
             >
             QuickCSS
             </Switch>
     },
     disableQuickCSS: {
         type: OptionType.COMPONENT,
-        description: "Toggle QuickCSS",
+        description: "Toggle QuickCss",
         default: true,
         component: () =>
             <Switch
                 value={settings.store.disableQuickCSS}
                 onChange={(v: boolean) => settings.store.disableQuickCSS = v}
-                note="Display quick enable/disable QuickCSS in toolbox"
+                note="Enabled and Disable QuickCss"
             >
             Enable/Disable QuickCSS toggle
+            </Switch>
+    },
+    disablePlugins: {
+        type: OptionType.COMPONENT,
+        description: "Toggle PLugins",
+        default: true,
+        component: () =>
+            <Switch
+                value={settings.store.disablePlugins}
+                onChange={(v: boolean) => settings.store.disablePlugins = v}
+                note="Enabled and Disable Plugins"
+            >
+            Enable/Disable disablePlugins toggle
             </Switch>
     },
     UpdaterTab: {
@@ -98,7 +111,7 @@ const settings = definePluginSettings({
                 value={settings.store.UpdaterTab}
                 onChange={(v: boolean) => settings.store.UpdaterTab = v}
                 disabled={IS_WEB}
-                note="Display UpdaterTab entry in toolbox"
+                note="Open UpdaterTab from toolbox"
             >
             UpdaterTab
             </Switch>
@@ -113,7 +126,7 @@ const settings = definePluginSettings({
             <Switch
                 value={settings.store.BadgeAPI}
                 onChange={(v: boolean) => settings.store.BadgeAPI = v}
-                note="Display BadgeAPI entry in toolbox"
+                note="Reload badges"
             >
             BadgeAPI
             </Switch>
@@ -126,7 +139,7 @@ const settings = definePluginSettings({
             <Switch
                 value={settings.store.DevCompanion}
                 onChange={(v: boolean) => settings.store.DevCompanion = v}
-                note="Display DevCompanion Reconnect entry in toolbox"
+                note="Reconnect Dev Companion"
             >
             DevCompanion
             </Switch>
@@ -140,7 +153,7 @@ const settings = definePluginSettings({
             <Switch
                 value={settings.store.PluginSettings}
                 onChange={(v: boolean) => settings.store.PluginSettings = v}
-                note="Display plugin settings group for adding or removing plugin settings from toolbox"
+                note="Shows plugin settings group for adding or removing plugin settings from toolbox"
             >
             Plugin Settings
             </Switch>
@@ -148,9 +161,9 @@ const settings = definePluginSettings({
     },
 });
 
-function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's causing bot problem
-    const ps = settings.use(["includedPlugins"] as any) as unknown as { includedPlugins: string[]; }; // keeps track of added plugin settings entries
-    const { includedPlugins = [] } = ps;
+function VencordPopout({ onClose } : {onClose: () => void}) {
+    const ps = settings.use(["includedPlugins", "disabledPlugins"] as any) as unknown as { includedPlugins: string[], disabledPlugins: string[]; }; // keeps track of added plugin settings entries
+    const { includedPlugins = [], disabledPlugins = [] } = ps;
     const pluginEnabledEntries = [] as string[]; // keeps track of vencord-wide added quick actions
 
     // for Vencord-wide quick actions ex) quickCss, updater, notification log
@@ -180,6 +193,21 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                     action={openNotificationLogModal}
                 />
             }
+            {
+                <Menu.MenuItem
+                    id="vc-toolbox-clear-plugins"
+                    label="Clear plugins"
+                    action={() => ps.disabledPlugins = []}
+                />
+            }
+            {
+                <Menu.MenuItem
+                    id="vc-toolbox-print-disabled-plugins"
+                    label="Print plugins"
+                    action={() => console.log(ps.disabledPlugins)}
+                />
+            }
+
             <Menu.MenuGroup label="Vencord Settings">
                 {settings.store.QuickCSS &&
                     <Menu.MenuItem
@@ -196,6 +224,31 @@ function VencordPopout({ onClose } : {onClose: () => void}) { // could be what's
                         action={ () => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
                     />
                 }
+                {settings.store.disablePlugins && (
+                    <Menu.MenuItem
+                        id="vc-toolbox-disable-plugins"
+                        label="Toggle Plugins"
+                        action={() => { {
+                            if (disabledPlugins.length === 0) {
+                                // Disable all plugins
+                                Object.values(Vencord.Plugins.plugins).forEach(plugin => {
+                                    if (Vencord.Settings.plugins[plugin.name].enabled) {
+                                        ps.disabledPlugins = [...disabledPlugins, plugin.name]; // Store the previously enabled plugin
+                                        Vencord.Settings.plugins[plugin.name].enabled = false; // Disable the plugin
+                                    }
+                                });
+                            } else {
+                                // Enable previously disabled plugins
+                                disabledPlugins.forEach(plugin => {
+                                    Vencord.Settings.plugins[plugin].enabled = true; // Enable the plugin
+                                });
+                                ps.disabledPlugins = [];
+                            }
+                        }
+                        }}
+                    />
+                )}
+
 
                 {!IS_WEB && settings.store.UpdaterTab &&
                     <Menu.MenuItem
@@ -313,6 +366,10 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
     );
 
     return <>{children}</>;
+}
+
+export function printDisabledPlugins(ps) {
+    console.log(ps.disabledPlugins);
 }
 
 export default definePlugin({
