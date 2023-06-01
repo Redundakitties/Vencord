@@ -27,68 +27,37 @@ import { Devs } from "@utils/constants";
 import { openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
-import definePlugin, { OptionType } from "@utils/types";
+import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
 import { findByCode } from "@webpack";
 import { Menu, Popout, Switch,useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 
+function settingsSwitch(description: string, key: string, note: string, disabled = false): PluginSettingDef {
+    return {
+        type: OptionType.COMPONENT,
+        description: description,
+        default: true,
+        component: () => (
+            <Switch
+                value={settings.store[key]}
+                onChange={(v: boolean) => settings.store[key] = v}
+                disabled={disabled}
+                note={note}
+            >
+                {description}
+            </Switch>
+        )
+    };
+}
+
 const settings = definePluginSettings({
     // for enabling and disabling Vencord-wide quick actions
-    RelaunchDiscord: {
-        type: OptionType.COMPONENT,
-        description: "Relaunch Discord",
-        default: true,
-        component: () =>
-            <Switch
-                value={settings.store.RelaunchDiscord}
-                onChange={(v: boolean) => settings.store.RelaunchDiscord = v}
-                disabled={IS_WEB}
-                note="Quits and restarts discord"
-            >
-            Relaunch Discord
-            </Switch>
-    },
-    Notifications: {
-        type: OptionType.COMPONENT,
-        description: "Open Notification Log",
-        default: true,
-        component: () =>
-            <Switch
-                value={settings.store.Notifications}
-                onChange={(v: boolean) => settings.store.Notifications = v}
-                note="Opens notification log from toolbox"
-            >
-            Notification Log
-            </Switch>
-    },
-    QuickCSS: {
-        type: OptionType.COMPONENT,
-        description: "Open QuickCss",
-        default: true,
-        component: () =>
-            <Switch
-                value={settings.store.QuickCSS}
-                onChange={(v: boolean) => settings.store.QuickCSS = v}
-                note="Open QuickCss from toolbox"
-            >
-            QuickCSS
-            </Switch>
-    },
-    disableQuickCSS: {
-        type: OptionType.COMPONENT,
-        description: "Toggle QuickCss",
-        default: true,
-        component: () =>
-            <Switch
-                value={settings.store.disableQuickCSS}
-                onChange={(v: boolean) => settings.store.disableQuickCSS = v}
-                note="Enabled and Disable QuickCss"
-            >
-            Enable/Disable QuickCSS toggle
-            </Switch>
-    },
+    relaunchDiscord: settingsSwitch("Relaunch Discord", "RelaunchDiscord", "Add ability to quit and restart discord to toolbox", IS_WEB),
+    notifs: settingsSwitch("Open Notification Log", "Notifications", "Add notifications log to toolbox"),
+    quickCss: settingsSwitch("Open QuickCss", "quickCss", "Open QuickCss from toolbox"),
+    toggleQuickCss: settingsSwitch("Toggle QuickCss", "toggleQuickCss", "Add Enable/Disable QuickCss toggle to toolbox"),
     disablePlugins: {
         type: OptionType.COMPONENT,
         description: "Toggle PLugins",
@@ -97,7 +66,7 @@ const settings = definePluginSettings({
             <Switch
                 value={settings.store.disablePlugins}
                 onChange={(v: boolean) => settings.store.disablePlugins = v}
-                note="Enabled and Disable Plugins"
+                note="Enable and Disable Plugins"
             >
             Enable/Disable disablePlugins toggle
             </Switch>
@@ -178,7 +147,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) {
             navId="vc-toolbox"
             onClose={onClose}>
 
-            {!IS_WEB && settings.store.RelaunchDiscord &&
+            {!IS_WEB && settings.store.relaunchDiscord &&
                 <Menu.MenuItem
                     id="vc-toolbox-relaunchdiscord"
                     label="Relaunch Discord"
@@ -186,7 +155,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) {
                 />
             }
 
-            {settings.store.Notifications &&
+            {settings.store.notifs &&
                 <Menu.MenuItem
                     id="vc-toolbox-notifications"
                     label="Open Notification Log"
@@ -209,7 +178,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) {
             }
 
             <Menu.MenuGroup label="Vencord Settings">
-                {settings.store.QuickCSS &&
+                {settings.store.quickCss &&
                     <Menu.MenuItem
                         id="vc-toolbox-quickcss"
                         label="Open QuickCSS"
@@ -217,7 +186,7 @@ function VencordPopout({ onClose } : {onClose: () => void}) {
                     />
                 }
 
-                {settings.store.disableQuickCSS &&
+                {settings.store.toggleQuickCss &&
                     <Menu.MenuItem
                         id="vc-toolbox-disable-quickcss"
                         label="Toggle QuickCSS"
