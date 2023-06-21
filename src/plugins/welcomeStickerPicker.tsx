@@ -49,7 +49,10 @@ const settings = definePluginSettings({
         default: false,
         description: "Enable unholy greet mode"
     }
-});
+}).withPrivateSettings<{
+    multiGreetChoices?: string[];
+    unholyMultiGreetEnabled?: boolean;
+}>();
 
 const MessageActions = findByPropsLazy("sendGreetMessage");
 
@@ -78,7 +81,7 @@ function greet(channel: Channel, message: Message, stickers: string[]) {
 
 
 function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], message: Message, channel: Channel; }) {
-    const s = settings.use(["greetMode", "multiGreetChoices"] as any) as unknown as { greetMode: GreetMode, multiGreetChoices: string[]; };
+    const s = settings.use(["greetMode", "multiGreetChoices"]);
     const { greetMode, multiGreetChoices = [] } = s;
 
     return (
@@ -117,7 +120,7 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
                 ))}
             </Menu.MenuGroup>
 
-            {!(settings.store as any).unholyMultiGreetEnabled ? null : (
+            {!settings.store.unholyMultiGreetEnabled ? null : (
                 <>
                     <Menu.MenuSeparator />
 
