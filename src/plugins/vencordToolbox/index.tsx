@@ -40,7 +40,6 @@ function settingsSwitch(description: string, key: string, note: string, disabled
     return {
         type: OptionType.COMPONENT,
         description: description,
-        default: true,
         component: () => (
             <Switch
                 value={settings.store[key]}
@@ -53,18 +52,10 @@ function settingsSwitch(description: string, key: string, note: string, disabled
         )
     };
 }
-
-interface PluginsTracker {
-    use: (plugins: string[]) => { includedPlugins: string[] };
+enum GreetMode {
+    Greet = "Greet",
+    NormalMessage = "Message"
 }
-
-const pluginsTracker: PluginsTracker = {
-    use: plugins => {
-        return {
-            includedPlugins: plugins,
-        };
-    },
-};
 
 const settings = definePluginSettings({
     // for enabling and disabling Vencord-wide quick actions
@@ -80,11 +71,13 @@ const settings = definePluginSettings({
 
     // For enabling and disabling individual plugin settings menus
     pluginSettings: settingsSwitch("Plugin Settings", "pluginSettings", "Add plugin settings to toolbox"),
-});
+}).withPrivateSettings<{
+    includedPlugins: string[];
+}>();
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries
-    const ps = pluginsTracker.use(["includedPlugins"]) as { includedPlugins: string[]; };
+    const ps = settings.use(["includedPlugins"]);
     const { includedPlugins = [] } = ps;
 
     // keeps track of vencord-wide added quick actions
