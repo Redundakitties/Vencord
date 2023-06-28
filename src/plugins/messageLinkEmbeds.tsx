@@ -20,13 +20,12 @@ import { addAccessory } from "@api/MessageAccessories";
 import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants.js";
+import { getCurrentGuild } from "@utils/discord";
 import { classes } from "@utils/misc";
 import { Queue } from "@utils/Queue";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType } from "@utils/types";
 import { find, findByCode, findByPropsLazy } from "@webpack";
-import { getCurrentGuild } from "@utils/discord";
-
 import {
     Button,
     ChannelStore,
@@ -264,7 +263,7 @@ function ChannelMessageEmbedAccessory({ message, channel, guildID }: MessageEmbe
     const isDM = guildID === "@me";
 
     //  serverList blacklist
-    const currGuild = getCurrentGuild()?.id ?? "@me"
+    const currGuild = getCurrentGuild()?.id ?? "@me";
     if (settings.store.serverList.includes(currGuild)) {
         return null;
     }
@@ -308,7 +307,7 @@ function AutomodEmbedAccessory(props: MessageEmbedProps): JSX.Element | null {
     const isDM = guildID === "@me";
 
     //  serverList blacklist
-    const currGuild = getCurrentGuild()?.id ?? "@me"
+    const currGuild = getCurrentGuild()?.id ?? "@me";
     if (settings.store.serverList.includes(currGuild)) {
         return null;
     }
