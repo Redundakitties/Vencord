@@ -73,7 +73,7 @@ const messageFetchQueue = new Queue();
 const settings = definePluginSettings({
     serverList: {
         description:
-            "List of servers to allow or exempt message embeds for (separated by spaces)",
+            "List of servers to exempt message embeds for (separated by spaces)",
         type: OptionType.STRING,
         default: "1234567890123445",
     },
@@ -109,7 +109,6 @@ const settings = definePluginSettings({
             </Button>
     }
 });
-
 
 async function fetchMessage(channelID: string, messageID: string) {
     const cached = messageCache.get(messageID);
@@ -262,12 +261,6 @@ function MessageEmbedAccessory({ message }: { message: Message; }) {
 function ChannelMessageEmbedAccessory({ message, channel, guildID }: MessageEmbedProps): JSX.Element | null {
     const isDM = guildID === "@me";
 
-    //  serverList blacklist
-    const currGuild = getCurrentGuild()?.id ?? "@me";
-    if (settings.store.serverList.includes(currGuild)) {
-        return null;
-    }
-
     const guild = !isDM && GuildStore.getGuild(channel.guild_id);
     const dmReceiver = UserStore.getUser(ChannelStore.getChannel(channel.id).recipients?.[0]);
 
@@ -306,11 +299,6 @@ function AutomodEmbedAccessory(props: MessageEmbedProps): JSX.Element | null {
 
     const isDM = guildID === "@me";
 
-    //  serverList blacklist
-    const currGuild = getCurrentGuild()?.id ?? "@me";
-    if (settings.store.serverList.includes(currGuild)) {
-        return null;
-    }
     const images = getImages(message);
     const { parse } = Parser;
 
@@ -373,6 +361,12 @@ export default definePlugin({
         addAccessory("messageLinkEmbed", props => {
             if (!messageLinkRegex.test(props.message.content))
                 return null;
+
+            //  serverList blacklist
+            const currGuild = getCurrentGuild()?.id ?? "@me";
+            if (settings.store.serverList.includes(currGuild)) {
+                return null;
+            }
 
             // need to reset the regex because it's global
             messageLinkRegex.lastIndex = 0;
