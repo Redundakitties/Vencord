@@ -25,6 +25,8 @@ import { Queue } from "@utils/Queue";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType } from "@utils/types";
 import { find, findByCode, findByPropsLazy } from "@webpack";
+import { getCurrentGuild } from "@utils/discord";
+
 import {
     Button,
     ChannelStore,
@@ -70,6 +72,12 @@ interface MessageEmbedProps {
 const messageFetchQueue = new Queue();
 
 const settings = definePluginSettings({
+    serverList: {
+        description:
+            "List of servers to allow or exempt message embeds for (separated by spaces)",
+        type: OptionType.STRING,
+        default: "1234567890123445",
+    },
     messageBackgroundColor: {
         description: "Background color for messages in rich embeds",
         type: OptionType.BOOLEAN
@@ -131,7 +139,6 @@ async function fetchMessage(channelID: string, messageID: string) {
 
     return message;
 }
-
 
 function getImages(message: Message): Attachment[] {
     const attachments: Attachment[] = [];
@@ -198,7 +205,6 @@ function withEmbeddedBy(message: Message, embeddedBy: string[]) {
     });
 }
 
-
 function MessageEmbedAccessory({ message }: { message: Message; }) {
     // @ts-ignore
     const embeddedBy: string[] = message.vencordEmbeddedBy ?? [];
@@ -257,9 +263,14 @@ function MessageEmbedAccessory({ message }: { message: Message; }) {
 function ChannelMessageEmbedAccessory({ message, channel, guildID }: MessageEmbedProps): JSX.Element | null {
     const isDM = guildID === "@me";
 
+    //  serverList blacklist
+    const currGuild = getCurrentGuild()?.id ?? "@me"
+    if (settings.store.serverList.includes(currGuild)) {
+        return null;
+    }
+
     const guild = !isDM && GuildStore.getGuild(channel.guild_id);
     const dmReceiver = UserStore.getUser(ChannelStore.getChannel(channel.id).recipients?.[0]);
-
 
     return <Embed
         embed={{
@@ -295,6 +306,12 @@ function AutomodEmbedAccessory(props: MessageEmbedProps): JSX.Element | null {
     const { message, channel, guildID } = props;
 
     const isDM = guildID === "@me";
+
+    //  serverList blacklist
+    const currGuild = getCurrentGuild()?.id ?? "@me"
+    if (settings.store.serverList.includes(currGuild)) {
+        return null;
+    }
     const images = getImages(message);
     const { parse } = Parser;
 
