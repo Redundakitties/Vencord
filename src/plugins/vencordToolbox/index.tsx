@@ -36,6 +36,19 @@ import type { ReactNode } from "react";
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 const getAllPlugins = makeLazy(() => Object.values(Vencord.Plugins.plugins));
 
+const removeSidebar = async() => {
+    let quickCss = await VencordNative.quickCss.get();
+
+    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 0px !important; }");
+    await VencordNative.quickCss.set(quickCss);
+};
+const addSidebar = async() => {
+    let quickCss = await VencordNative.quickCss.get();
+
+    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 165px !important; }");
+    await VencordNative.quickCss.set(quickCss);
+};
+
 function settingsSwitch(description: string, key: string, note: string, disabled = false): PluginSettingDef {
     return {
         type: OptionType.COMPONENT,
@@ -59,6 +72,7 @@ const settings = definePluginSettings({
     notifs: settingsSwitch("Open Notification Log", "notifs", "View notifications log from toolbox"),
     quickCss: settingsSwitch("Edit QuickCss", "quickCss", "Edit QuickCss from toolbox"),
     toggleQuickCss: settingsSwitch("Toggle QuickCss", "toggleQuickCss", "Enable/Disable QuickCss from toolbox"),
+    toggleSidebar: settingsSwitch("Toggle Sidebar", "toggleSidebar", "Enable/Disable Sidebar from toolbox"),
     updater: settingsSwitch("UpdaterTab", "updater", "Open UpdaterTab from toolbox", IS_WEB),
 
     // for enabling and disabling misc plugin quick actions
@@ -69,12 +83,13 @@ const settings = definePluginSettings({
     pluginSettings: settingsSwitch("Plugin Settings", "pluginSettings", "Add plugin settings to toolbox"),
 }).withPrivateSettings<{
     includedPlugins: string[];
+    sidebarVisible: boolean;
 }>();
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
-    const ps = settings.use(["includedPlugins"]);
-    const { includedPlugins = [] } = ps;
+    const ps = settings.use(["includedPlugins", "sidebarVisible"]);
+    const { includedPlugins = [], sidebarVisible = true } = ps;
 
     // for Vencord-wide quick actions ex) toggle quickCss, updater tab, notification log
     const pluginEnabledEntries = [] as string[];
@@ -119,6 +134,14 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
                     />
                 }
+
+                {settings.store.toggleSidebar && (
+                    <Menu.MenuItem
+                        id="vc-toolbox-disable-sidebar"
+                        label="Toggle Sidebar"
+                        action={() =>{ ps.sidebarVisible ? removeSidebar() : addSidebar(); ps.sidebarVisible = !ps.sidebarVisible; }}
+                    />
+                )}
 
                 {!IS_WEB && settings.store.updater &&
                     <Menu.MenuItem
