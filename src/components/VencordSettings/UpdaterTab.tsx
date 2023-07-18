@@ -183,7 +183,7 @@ function Newer(props: CommonProps) {
     );
 }
 
-function updaterBody() {
+function UpdaterBody() {
     const [repo, err, repoPending] = useAwaiter(getRepo, { fallbackValue: "Loading..." });
 
     React.useEffect(() => {
@@ -221,7 +221,6 @@ function updaterBody() {
 
 function Updater() {
     const settings = useSettings(["notifyAboutUpdates", "autoUpdate", "autoUpdateNotification"]);
-    const updaterContent = updaterBody();
 
     return (
         <SettingsTab title="Vencord Updater">
@@ -250,22 +249,22 @@ function Updater() {
                 Get notified when an automatic update completes
             </Switch>
 
-            {updaterContent}
+            <UpdaterBody />
+
         </SettingsTab>
     );
 }
 
-function UpdaterModal ({ modalProps, close }: { modalProps: ModalProps; close(): void; }) {
-    const updaterContent = updaterBody();
+function UpdaterModal({ modalProps }: { modalProps: ModalProps; }) {
     return (
         <ModalRoot {...modalProps} size={ModalSize.LARGE}>
             <ModalHeader>
                 <Text variant="heading-lg/semibold" style={{ flexGrow: 1 }}>Vencord Updater</Text>
-                <ModalCloseButton onClick={close} />
+                <ModalCloseButton onClick={modalProps.onClose} />
             </ModalHeader>
 
             <ModalContent>
-                {updaterContent}
+                <UpdaterBody />;
             </ModalContent>
 
         </ModalRoot>
@@ -276,7 +275,6 @@ export function openUpdaterModal() {
     const key = openModal(modalProps => (
         <UpdaterModal
             modalProps={modalProps}
-            close={() => closeModal(key)}
         />
     ));
 }
