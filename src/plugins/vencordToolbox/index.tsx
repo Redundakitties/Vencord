@@ -54,12 +54,29 @@ function settingsSwitch(description: string, key: string, note: string, disabled
 }
 
 const settings = definePluginSettings({
-    // for enabling and disabling Vencord-wide quick actions
-    relaunchDiscord: settingsSwitch("Relaunch Discord", "relaunchDiscord", "Quit and restart discord from toolbox", IS_WEB),
-    notifs: settingsSwitch("Open Notification Log", "notifs", "View notifications log from toolbox"),
-    quickCss: settingsSwitch("Edit QuickCss", "quickCss", "Edit QuickCss from toolbox"),
-    toggleQuickCss: settingsSwitch("Toggle QuickCss", "toggleQuickCss", "Enable/Disable QuickCss from toolbox"),
-    updater: settingsSwitch("UpdaterTab", "updater", "Open UpdaterTab from toolbox", IS_WEB),
+// for enabling and disabling Vencord-wide quick actions (These are hard-coded)
+    relaunchDiscord: {
+        type: OptionType.BOOLEAN,
+        description: "Quit and restart discord from toolbox",
+        disabled: IS_WEB,
+    },
+    notifs: {
+        type: OptionType.BOOLEAN,
+        description: "View notifications log from toolbox",
+    },
+    quickCss: {
+        type: OptionType.BOOLEAN,
+        description: "Edit QuickCss from toolbox",
+    },
+    toggleQuickCss: {
+        type: OptionType.BOOLEAN,
+        description: "Enable/Disable QuickCss from toolbox",
+    },
+    updater: {
+        type: OptionType.BOOLEAN,
+        description: "Open UpdaterTab from toolbox",
+        disabled: IS_WEB,
+    },
 
     // for enabling and disabling misc plugin quick actions
     BadgeAPI: settingsSwitch("BadgeAPI", "BadgeAPI", "Refetch Badges from toolbox"),
