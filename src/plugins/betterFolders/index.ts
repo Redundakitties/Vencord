@@ -186,7 +186,7 @@ export default definePlugin({
 
 function onKeydown(e: KeyboardEvent) {
     if (settings.store.closeAllEscape) {
-        if (e.key === "Escape") {
+        if (e.metaKey && e.key === "Escape") {
             for (const id of ExpandedFolderStore.getExpandedFolders())
                 FolderUtils.toggleGuildFolderExpand(id);
         }

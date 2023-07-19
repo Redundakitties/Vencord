@@ -30,68 +30,61 @@ import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
 import { findByCode } from "@webpack";
-import { Alerts, Menu, Popout, Switch, useState } from "@webpack/common";
+import { Alerts, Menu, Popout, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
-const getAllPlugins = makeLazy(() => Object.values(Vencord.Plugins.plugins));
 
-function settingsSwitch(description: string, key: string, note: string, disabled = false): PluginSettingDef {
+const removeSidebar = async () => {
+    let quickCss = await VencordNative.quickCss.get();
+
+    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 0px !important; }");
+    await VencordNative.quickCss.set(quickCss);
+};
+const addSidebar = async () => {
+    let quickCss = await VencordNative.quickCss.get();
+    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 165px !important; }");
+    await VencordNative.quickCss.set(quickCss);
+};
+
+function settingsBool(description: string, disabled = false): PluginSettingDef {
     return {
-        type: OptionType.COMPONENT,
+        type: OptionType.BOOLEAN,
         description: description,
-        component: () => (
-            <Switch
-                value={settings.store[key]}
-                onChange={v => settings.store[key] = v}
-                disabled={disabled}
-                note={note}
-            >
-                {description}
-            </Switch>
-        )
+        default: true,
+        hidden: disabled,
     };
 }
 
 const settings = definePluginSettings({
-// for enabling and disabling Vencord-wide quick actions (These are hard-coded)
-    relaunchDiscord: {
-        type: OptionType.BOOLEAN,
-        description: "Quit and restart discord from toolbox",
-        disabled: IS_WEB,
-    },
-    notifs: {
-        type: OptionType.BOOLEAN,
-        description: "View notifications log from toolbox",
-    },
-    quickCss: {
-        type: OptionType.BOOLEAN,
-        description: "Edit QuickCss from toolbox",
-    },
-    toggleQuickCss: {
-        type: OptionType.BOOLEAN,
-        description: "Enable/Disable QuickCss from toolbox",
-    },
-    updater: {
-        type: OptionType.BOOLEAN,
-        description: "Open UpdaterTab from toolbox",
-        disabled: IS_WEB,
-    },
+    // for enabling and disabling Vencord-wide quick actions
+    relaunchDiscord: settingsBool("Quit and restart discord from toolbox", IS_WEB),
+    notifs: settingsBool("View notifications log from toolbox"),
+    quickCss: settingsBool("Edit QuickCss from toolbox"),
+    toggleQuickCss: settingsBool("Enable/Disable QuickCss from toolbox"),
+    toggleSidebar: settingsBool("Enable/Disable Sidebar from toolbox"),
+    updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
 
     // for enabling and disabling misc plugin quick actions
-    BadgeAPI: settingsSwitch("BadgeAPI", "BadgeAPI", "Refetch Badges from toolbox"),
-    DevCompanion: settingsSwitch("DevCompanion", "DevCompanion", "Reconnect Dev Companion from toolbox"),
+    DevCompanion: settingsBool("Reconnect Dev Companion from toolbox"),
 
     // For enabling and disabling individual plugin settings menus
-    pluginSettings: settingsSwitch("Plugin Settings", "pluginSettings", "Add plugin settings to toolbox"),
+    pluginSettings: settingsBool("Add plugin settings to toolbox"),
 }).withPrivateSettings<{
     includedPlugins: string[];
+    sidebarVisible: boolean;
 }>();
+
+// eslint-disable-next-line dot-notation
+settings["BadgeAPI"] = settingsBool("Refetch Badges from toolbox");
+// eslint-disable-next-line dot-notation
+settings["relaunchDiscord"] = settingsBool("Quit and restart discord from toolbox", IS_WEB);
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
-    const ps = settings.use(["includedPlugins"]);
-    const { includedPlugins = [] } = ps;
+    const ps = settings.use(["includedPlugins", "sidebarVisible"]);
+    const { includedPlugins = [], sidebarVisible = true } = ps;
+    const getAllPlugins = makeLazy(() => Object.values(Vencord.Plugins.plugins));
 
     // for Vencord-wide quick actions ex) toggle quickCss, updater tab, notification log
     const pluginEnabledEntries = [] as string[];
@@ -136,6 +129,14 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
                     />
                 }
+
+                {(settings.store.sidebarVisible &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-disable-sidebar"
+                        label="Toggle Sidebar"
+                        action={() => { ps.sidebarVisible ? removeSidebar() : addSidebar(); ps.sidebarVisible = !ps.sidebarVisible; }}
+                    />
+                )}
 
                 {!IS_WEB && settings.store.updater &&
                     <Menu.MenuItem

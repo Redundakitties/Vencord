@@ -22,7 +22,7 @@ import { Flex } from "@components/Flex";
 import { Link } from "@components/Link";
 import { Margins } from "@utils/margins";
 import { classes } from "@utils/misc";
-import { closeModal, ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
+import { ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { useAwaiter } from "@utils/react";
 import { changes, checkForUpdates, getRepo, isNewer, update, updateError, UpdateLogger } from "@utils/updater";
@@ -272,7 +272,7 @@ function UpdaterModal({ modalProps }: { modalProps: ModalProps; }) {
 }
 
 export function openUpdaterModal() {
-    const key = openModal(modalProps => (
+    openModal(modalProps => (
         <UpdaterModal
             modalProps={modalProps}
         />
