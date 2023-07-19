@@ -36,13 +36,13 @@ import type { ReactNode } from "react";
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 const getAllPlugins = makeLazy(() => Object.values(Vencord.Plugins.plugins));
 
-const removeSidebar = async() => {
+const removeSidebar = async () => {
     let quickCss = await VencordNative.quickCss.get();
 
     quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 0px !important; }");
     await VencordNative.quickCss.set(quickCss);
 };
-const addSidebar = async() => {
+const addSidebar = async () => {
     let quickCss = await VencordNative.quickCss.get();
 
     quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 165px !important; }");
@@ -139,7 +139,7 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                     <Menu.MenuItem
                         id="vc-toolbox-disable-sidebar"
                         label="Toggle Sidebar"
-                        action={() =>{ ps.sidebarVisible ? removeSidebar() : addSidebar(); ps.sidebarVisible = !ps.sidebarVisible; }}
+                        action={() => { ps.sidebarVisible ? removeSidebar() : addSidebar(); ps.sidebarVisible = !ps.sidebarVisible; }}
                     />
                 )}
 
