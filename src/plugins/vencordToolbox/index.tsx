@@ -33,6 +33,8 @@ import { findByCode } from "@webpack";
 import { Alerts, Menu, Popout, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
+import plugins from "~plugins";
+
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 
 const removeSidebar = async () => {
@@ -56,6 +58,13 @@ function settingsBool(description: string, disabled = false): PluginSettingDef {
     };
 }
 
+function createPluginSettings(pluginList: string[]) {
+    const definedSettings = pluginList
+        .map(v => ({ [v]: settingsBool("0") }))
+        .reduce((k, t) => ({ ...k, ...t }), {});
+    return definedSettings;
+}
+
 const settings = definePluginSettings({
     // for enabling and disabling Vencord-wide quick actions
     relaunchDiscord: settingsBool("Quit and restart discord from toolbox", IS_WEB),
@@ -67,32 +76,30 @@ const settings = definePluginSettings({
 
     // for enabling and disabling misc plugin quick actions
     DevCompanion: settingsBool("Reconnect Dev Companion from toolbox"),
+    BadgeAPI: settingsBool("Refetch Badges from toolbox"),
 
     // For enabling and disabling individual plugin settings menus
     pluginSettings: settingsBool("Add plugin settings to toolbox"),
+    ...createPluginSettings(["test1", "test2"]),
 }).withPrivateSettings<{
     includedPlugins: string[];
     sidebarVisible: boolean;
 }>();
 
-// eslint-disable-next-line dot-notation
-settings["BadgeAPI"] = settingsBool("Refetch Badges from toolbox");
-// eslint-disable-next-line dot-notation
-settings["relaunchDiscord"] = settingsBool("Quit and restart discord from toolbox", IS_WEB);
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
     const ps = settings.use(["includedPlugins", "sidebarVisible"]);
     const { includedPlugins = [], sidebarVisible = true } = ps;
-    const getAllPlugins = makeLazy(() => Object.values(Vencord.Plugins.plugins));
+    const enabledPlugins = makeLazy(() => Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name) && p.settings));
 
     // for Vencord-wide quick actions ex) toggle quickCss, updater tab, notification log
-    const pluginEnabledEntries = [] as string[];
-    for (const [settingsName, enabled] of Object.entries(settings.store)) {
-        if (enabled) {
-            pluginEnabledEntries.push(settingsName);
-        }
-    }
+    const pluginEnabledEntries = [] as string[]; // ////////////
+    for (const [settingsName, enabled] of Object.entries(settings.store)) { // /////////
+        if (enabled) { // //////
+            pluginEnabledEntries.push(settingsName); // ///////
+        } // ///////////
+    } // ////////////
     return (
         <Menu.Menu
             navId="vc-toolbox"
@@ -147,8 +154,8 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                 }
             </Menu.MenuGroup>
 
-            {getAllPlugins() // misc plugin quick actions ex) DevCompanion and BadgesAPI
-                .filter(plugin => plugin.toolboxActions && Vencord.Plugins.isPluginEnabled(plugin.name) && pluginEnabledEntries.includes(plugin.name))
+            {enabledPlugins() // misc plugin quick actions ex) DevCompanion and BadgesAPI
+                .filter(plugin => plugin.toolboxActions && pluginEnabledEntries.includes(plugin.name))
                 .map(plugin => (
                     <Menu.MenuGroup
                         label={plugin.name}
@@ -170,7 +177,7 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
 
             {settings.store.pluginSettings && // Main plugin setttings dropdown w/ checkboxes
                 <Menu.MenuGroup label="Plugin Settings">
-                    {getAllPlugins()
+                    {enabledPlugins()
                         .filter(plugin => includedPlugins.includes(plugin.name))
                         .map(plugin => {
                             return (
@@ -202,7 +209,7 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                     <Menu.MenuItem
                         id="vc-toolbox-plugins"
                         label="Add or Remove Plugins">
-                        {getAllPlugins().filter(p => p.settings && Vencord.Plugins.isPluginEnabled(p.name)).map(plugin => {
+                        {enabledPlugins().map(plugin => {
                             const checked = includedPlugins.some(p => p === plugin.name);
                             return (
                                 <Menu.MenuCheckboxItem
