@@ -45,10 +45,13 @@ function settingsBool(description: string, disabled = false): PluginSettingDef {
     };
 }
 
-function createPluginSettings(pluginList: string[]) {
-    const definedSettings = pluginList
-        .map(v => ({ [v]: settingsBool("0") }))
-        .reduce((k, t) => ({ ...k, ...t }), {});
+type ToolboxActions = Record<string, () => void> | undefined;
+
+function createPluginSettings(toolboxActions: ToolboxActions) {
+    const actions = toolboxActions || {};
+    const definedSettings = Object.keys(actions)
+        .map(text => ({ [text]: settingsBool(text) }))
+        .reduce((mergedSettings, currentSetting) => ({ ...mergedSettings, ...currentSetting }), {});
     return definedSettings;
 }
 
@@ -61,13 +64,13 @@ const settings = definePluginSettings({
     toggleSidebar: settingsBool("Enable/Disable Sidebar from toolbox"),
     updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
 
-    // for enabling and disabling misc plugin quick actions
-    DevCompanion: settingsBool("Reconnect Dev Companion from toolbox"),
-    BadgeAPI: settingsBool("Refetch Badges from toolbox"),
+    // for enabling and disabling misc plugin quick actions // //////////////
+    DevCompanion: settingsBool("Reconnect Dev Companion from toolbox"), // /////////////////
+    BadgeAPI: settingsBool("Refetch Badges from toolbox"), // ////////////////
+    // ...createPluginSettings(Vencord.Plugins.plugins.DevCompanion.toolboxActions),
 
     // For enabling and disabling individual plugin settings menus
     pluginSettings: settingsBool("Add plugin settings to toolbox"),
-    ...createPluginSettings(["test1", "test2"]),
 }).withPrivateSettings<{
     pinnedPlugins: string[];
     sidebarVisible: boolean;
