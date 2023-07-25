@@ -24,7 +24,6 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import PluginModal from "@components/PluginSettings/PluginModal";
 import { openUpdaterModal } from "@components/VencordSettings/UpdaterTab";
 import { Devs } from "@utils/constants";
-import { makeLazy } from "@utils/lazy";
 import { openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
@@ -36,18 +35,6 @@ import type { ReactNode } from "react";
 import plugins from "~plugins";
 
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
-
-const removeSidebar = async () => {
-    let quickCss = await VencordNative.quickCss.get();
-
-    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 0px !important; }");
-    await VencordNative.quickCss.set(quickCss);
-};
-const addSidebar = async () => {
-    let quickCss = await VencordNative.quickCss.get();
-    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 165px !important; }");
-    await VencordNative.quickCss.set(quickCss);
-};
 
 function settingsBool(description: string, disabled = false): PluginSettingDef {
     return {
@@ -82,24 +69,84 @@ const settings = definePluginSettings({
     pluginSettings: settingsBool("Add plugin settings to toolbox"),
     ...createPluginSettings(["test1", "test2"]),
 }).withPrivateSettings<{
-    includedPlugins: string[];
+    pinnedPlugins: string[];
     sidebarVisible: boolean;
 }>();
 
-
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
-    const ps = settings.use(["includedPlugins", "sidebarVisible"]);
-    const { includedPlugins = [], sidebarVisible = true } = ps;
-    const enabledPlugins = makeLazy(() => Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name) && p.settings));
+    const ps = settings.use(["pinnedPlugins", "sidebarVisible"]);
+    const { pinnedPlugins = [] } = ps;
+    const toolboxActionsNodelist = [] as ReactNode[]; // // misc plugin quick actions ex) DevCompanion and BadgesAPI
+    const allEnabledNodelist = [] as ReactNode[]; // all enabled plugins if they have settings
+    const pinnedNodelist = [] as ReactNode[]; // plugins settings pinned to toolbox dropdown
 
-    // for Vencord-wide quick actions ex) toggle quickCss, updater tab, notification log
-    const pluginEnabledEntries = [] as string[]; // ////////////
-    for (const [settingsName, enabled] of Object.entries(settings.store)) { // /////////
-        if (enabled) { // //////
-            pluginEnabledEntries.push(settingsName); // ///////
-        } // ///////////
-    } // ////////////
+    for (const plugin of Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
+        if (plugin.toolboxActions) {
+            toolboxActionsNodelist.push(
+                <Menu.MenuGroup
+                    label={plugin.name}
+                    key={`vc-toolbox-${plugin.name}`}>
+                    {Object.entries(plugin.toolboxActions).map(([text, action]) => {
+                        const key = `vc-toolbox-${plugin.name}-${text}`;
+                        return (
+                            <Menu.MenuItem
+                                id={key}
+                                key={key}
+                                label={text}
+                                action={action}
+                            />
+                        );
+                    })}
+                </Menu.MenuGroup>
+            );
+        }
+
+        if (plugin.settings) { // if plugin has settings
+            const checked = pinnedPlugins.some(p => p === plugin.name);
+            allEnabledNodelist.push(
+                <Menu.MenuCheckboxItem
+                    key={"vc-toolbox-settings-key-" + plugin.name}
+                    id={"vc-toolbox-settings-" + plugin.name}
+                    label={plugin.name}
+                    checked={checked}
+                    action={() => { // when checked adds plugin to toolbox
+                        ps.pinnedPlugins = checked
+                            ? pinnedPlugins.filter(p => p !== plugin.name)
+                            : [...pinnedPlugins, plugin.name];
+                    }}
+                />
+            );
+            if (pinnedPlugins.includes(plugin.name)) { // all pinned plugins
+                pinnedNodelist.push(
+                    <Menu.MenuItem
+                        id={"vc-toolbox-checkbox-" + plugin.name}
+                        key={"vc-toolbox-checkbox-key-" + plugin.name}
+                        label={plugin.name}
+                        action={() => {
+                            openModal(modalProps => (
+                                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => {
+                                    Alerts.show({
+                                        title: "Restart required",
+                                        body: (
+                                            <>
+                                                <p>The following plugins require a restart:</p>
+                                                <div>{plugin.name}</div>
+                                            </>
+                                        ),
+                                        confirmText: "Restart now",
+                                        cancelText: "Later!",
+                                        onConfirm: () => location.reload()
+                                    });
+                                }} />
+                            ));
+                        }}
+                    />
+                );
+            }
+        }
+    }
+
     return (
         <Menu.Menu
             navId="vc-toolbox"
@@ -112,7 +159,6 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                     action={() => relaunch()}
                 />
             }
-
             {settings.store.notifs &&
                 <Menu.MenuItem
                     id="vc-toolbox-notifications"
@@ -128,7 +174,6 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         action={() => VencordNative.quickCss.openEditor()}
                     />
                 }
-
                 {settings.store.toggleQuickCss &&
                     <Menu.MenuItem
                         id="vc-toolbox-disable-quickcss"
@@ -136,15 +181,6 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
                     />
                 }
-
-                {(settings.store.sidebarVisible &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-disable-sidebar"
-                        label="Toggle Sidebar"
-                        action={() => { ps.sidebarVisible ? removeSidebar() : addSidebar(); ps.sidebarVisible = !ps.sidebarVisible; }}
-                    />
-                )}
-
                 {!IS_WEB && settings.store.updater &&
                     <Menu.MenuItem
                         id="vc-toolbox-updater-tab"
@@ -154,77 +190,15 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                 }
             </Menu.MenuGroup>
 
-            {enabledPlugins() // misc plugin quick actions ex) DevCompanion and BadgesAPI
-                .filter(plugin => plugin.toolboxActions && pluginEnabledEntries.includes(plugin.name))
-                .map(plugin => (
-                    <Menu.MenuGroup
-                        label={plugin.name}
-                        key={`vc-toolbox-${plugin.name}`}>
-                        {plugin.toolboxActions && Object.entries(plugin.toolboxActions).map(([text, action]) => {
-                            const key = `vc-toolbox-${plugin.name}-${text}`;
-                            return (
-                                <Menu.MenuItem
-                                    id={key}
-                                    key={key}
-                                    label={text}
-                                    action={action}
-                                />
-                            );
-                        })}
-                    </Menu.MenuGroup>
-                ))
-            }
+            {...toolboxActionsNodelist}
 
-            {settings.store.pluginSettings && // Main plugin setttings dropdown w/ checkboxes
+            {settings.store.pluginSettings &&
                 <Menu.MenuGroup label="Plugin Settings">
-                    {enabledPlugins()
-                        .filter(plugin => includedPlugins.includes(plugin.name))
-                        .map(plugin => {
-                            return (
-                                <Menu.MenuItem
-                                    id={"vc-toolbox-checkbox-" + plugin.name}
-                                    key={"vc-toolbox-checkbox-key-" + plugin.name}
-                                    label={plugin.name}
-                                    action={() => {
-                                        openModal(modalProps => (
-                                            <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => {
-                                                Alerts.show({
-                                                    title: "Restart required",
-                                                    body: (
-                                                        <>
-                                                            <p>The following plugins require a restart:</p>
-                                                            <div>{plugin.name}</div>
-                                                        </>
-                                                    ),
-                                                    confirmText: "Restart now",
-                                                    cancelText: "Later!",
-                                                    onConfirm: () => location.reload()
-                                                });
-                                            }} />
-                                        ));
-                                    }}
-                                />
-                            );
-                        })}
+                    {...pinnedNodelist}
                     <Menu.MenuItem
                         id="vc-toolbox-plugins"
-                        label="Add or Remove Plugins">
-                        {enabledPlugins().map(plugin => {
-                            const checked = includedPlugins.some(p => p === plugin.name);
-                            return (
-                                <Menu.MenuCheckboxItem
-                                    key={"vc-toolbox-settings-key-" + plugin.name}
-                                    id={"vc-toolbox-settings-" + plugin.name}
-                                    label={plugin.name}
-                                    checked={checked}
-                                    action={() => { // when checked adds plugin to toolbox
-                                        ps.includedPlugins = checked
-                                            ? includedPlugins.filter(p => p !== plugin.name)
-                                            : [...includedPlugins, plugin.name];
-                                    }}
-                                />
-                            );
-                        })}
+                        label="Pin or Unpin Plugins">
+                        {...allEnabledNodelist}
                     </Menu.MenuItem>
                 </Menu.MenuGroup>}
         </Menu.Menu>
