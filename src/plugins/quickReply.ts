@@ -58,6 +58,12 @@ export default definePlugin({
     description: "Reply to (ctrl + up/down) and edit (ctrl + shift + up/down) messages via keybinds",
     settings,
 
+    toolboxActions: {
+        "Reply"() {
+            console.log("HI");
+        }
+    },
+
     start() {
         Dispatcher.subscribe("DELETE_PENDING_REPLY", onDeletePendingReply);
         Dispatcher.subscribe("MESSAGE_END_EDIT", onEndEdit);

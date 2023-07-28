@@ -45,16 +45,6 @@ function settingsBool(description: string, disabled = false): PluginSettingDef {
     };
 }
 
-type ToolboxActions = Record<string, () => void> | undefined;
-
-function createPluginSettings(toolboxActions: ToolboxActions) {
-    const actions = toolboxActions || {};
-    const definedSettings = Object.keys(actions)
-        .map(text => ({ [text]: settingsBool(text) }))
-        .reduce((mergedSettings, currentSetting) => ({ ...mergedSettings, ...currentSetting }), {});
-    return definedSettings;
-}
-
 const settings = definePluginSettings({
     // for enabling and disabling Vencord-wide quick actions
     relaunchDiscord: settingsBool("Quit and restart discord from toolbox", IS_WEB),
@@ -64,67 +54,85 @@ const settings = definePluginSettings({
     toggleSidebar: settingsBool("Enable/Disable Sidebar from toolbox"),
     updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
 
-    // for enabling and disabling misc plugin quick actions // //////////////
-    DevCompanion: settingsBool("Reconnect Dev Companion from toolbox"), // /////////////////
-    BadgeAPI: settingsBool("Refetch Badges from toolbox"), // ////////////////
-    // ...createPluginSettings(Vencord.Plugins.plugins.DevCompanion.toolboxActions),
+    // for enabling and disabling misc plugin quick actions
+    pluginActions: settingsBool("Pin plugin quick actions to toolbox"),
 
-    // For enabling and disabling individual plugin settings menus
-    pluginSettings: settingsBool("Add plugin settings to toolbox"),
+    // for enabling and disabling individual plugin settings menus
+    pluginSettings: settingsBool("Pin plugin settings to toolbox"),
 }).withPrivateSettings<{
-    pinnedPlugins: string[];
+    pinnedSettings: string[];
+    pinnedActions: string[];
     sidebarVisible: boolean;
 }>();
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
-    const ps = settings.use(["pinnedPlugins", "sidebarVisible"]);
-    const { pinnedPlugins = [] } = ps;
-    const toolboxActionsNodelist = [] as ReactNode[]; // // misc plugin quick actions ex) DevCompanion and BadgesAPI
-    const allEnabledNodelist = [] as ReactNode[]; // all enabled plugins if they have settings
-    const pinnedNodelist = [] as ReactNode[]; // plugins settings pinned to toolbox dropdown
+    const ps = settings.use(["pinnedSettings", "pinnedActions", "sidebarVisible"]);
+    const { pinnedSettings = [], pinnedActions = [] } = ps;
+
+    const allActionsRNList = [] as ReactNode[]; // all possible plugin actions
+    const pinnedActionsRNList = [] as ReactNode[]; // pinned actions
+    const allEnabledRNList = [] as ReactNode[]; // all enabled plugins if they have settings
+    const pinnedEnabledRNList = [] as ReactNode[]; // pinned plugin settings
 
     for (const plugin of Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
         if (plugin.toolboxActions) {
-            toolboxActionsNodelist.push(
-                <Menu.MenuGroup
-                    label={plugin.name}
-                    key={`vc-toolbox-${plugin.name}`}>
-                    {Object.entries(plugin.toolboxActions).map(([text, action]) => {
-                        const key = `vc-toolbox-${plugin.name}-${text}`;
-                        return (
-                            <Menu.MenuItem
-                                id={key}
-                                key={key}
-                                label={text}
-                                action={action}
-                            />
-                        );
-                    })}
-                </Menu.MenuGroup>
-            );
-        }
-
-        if (plugin.settings) { // if plugin has settings
-            const checked = pinnedPlugins.some(p => p === plugin.name);
-            allEnabledNodelist.push(
+            const checkedActions = pinnedActions.some(p => p === plugin.name);
+            allActionsRNList.push(
                 <Menu.MenuCheckboxItem
-                    key={"vc-toolbox-settings-key-" + plugin.name}
-                    id={"vc-toolbox-settings-" + plugin.name}
+                    key={"vc-toolbox-actioncb-key-" + plugin.name}
+                    id={"vc-toolbox-actioncb-" + plugin.name}
                     label={plugin.name}
-                    checked={checked}
-                    action={() => { // when checked adds plugin to toolbox
-                        ps.pinnedPlugins = checked
-                            ? pinnedPlugins.filter(p => p !== plugin.name)
-                            : [...pinnedPlugins, plugin.name];
+                    checked={checkedActions}
+                    action={() => { // when checkedActions pins action to toolbox
+                        ps.pinnedActions = checkedActions
+                            ? pinnedActions.filter(p => p !== plugin.name)
+                            : [...pinnedActions, plugin.name];
                     }}
                 />
             );
-            if (pinnedPlugins.includes(plugin.name)) { // all pinned plugins
-                pinnedNodelist.push(
+
+            if (pinnedActions.includes(plugin.name)) { // actions pinned to toolbox
+                pinnedActionsRNList.push(
+                    <Menu.MenuGroup
+                        label={plugin.name}
+                        key={`vc-toolbox-${plugin.name}`}>
+                        {Object.entries(plugin.toolboxActions).map(([text, action]) => {
+                            const key = `vc-toolbox-${plugin.name}-${text}`;
+                            return (
+                                <Menu.MenuItem
+                                    id={key}
+                                    key={key}
+                                    label={text}
+                                    action={action}
+                                />
+                            );
+                        })}
+                    </Menu.MenuGroup>
+                );
+            }
+        }
+
+        if (plugin.settings) { // if plugin has settings make checkbox option
+            const checkedSettings = pinnedSettings.some(p => p === plugin.name);
+            allEnabledRNList.push(
+                <Menu.MenuCheckboxItem
+                    key={"vc-toolbox-checkbox-key-" + plugin.name}
+                    id={"vc-toolbox-checkbox-" + plugin.name}
+                    label={plugin.name}
+                    checked={checkedSettings}
+                    action={() => { // when checkedSettings pins plugin to toolbox
+                        ps.pinnedSettings = checkedSettings
+                            ? pinnedSettings.filter(p => p !== plugin.name)
+                            : [...pinnedSettings, plugin.name];
+                    }}
+                />
+            );
+            if (pinnedSettings.includes(plugin.name)) { // plugins that have been pinned to toolbox
+                pinnedEnabledRNList.push(
                     <Menu.MenuItem
-                        id={"vc-toolbox-checkbox-" + plugin.name}
-                        key={"vc-toolbox-checkbox-key-" + plugin.name}
+                        id={"vc-toolbox-settings-" + plugin.name}
+                        key={"vc-toolbox-settings-key-" + plugin.name}
                         label={plugin.name}
                         action={() => {
                             openModal(modalProps => (
@@ -154,22 +162,46 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
         <Menu.Menu
             navId="vc-toolbox"
             onClose={onClose}>
+            <Menu.MenuGroup label="Custom Actions">
+                {settings.store.pluginActions &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-actions"
+                        label="Pin or Unpin Actions">
+                        {...allActionsRNList}
+                    </Menu.MenuItem>
+                }
+            </Menu.MenuGroup>
+            {...pinnedActionsRNList}
 
-            {!IS_WEB && settings.store.relaunchDiscord &&
-                <Menu.MenuItem
-                    id="vc-toolbox-relaunchdiscord"
-                    label="Relaunch Discord"
-                    action={() => relaunch()}
-                />
-            }
-            {settings.store.notifs &&
-                <Menu.MenuItem
-                    id="vc-toolbox-notifications"
-                    label="Notification Log"
-                    action={openNotificationLogModal}
-                />
-            }
-            <Menu.MenuGroup label="Vencord Settings">
+            <Menu.MenuGroup label="Plugin Settings">
+                {settings.store.pluginSettings &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-plugins"
+                        label="Pin or Unpin Plugins">
+                        {...allEnabledRNList}
+                    </Menu.MenuItem>
+                }
+                {...pinnedEnabledRNList}
+            </Menu.MenuGroup>
+
+            <Menu.MenuGroup label="Discord Tools">
+                {!IS_WEB && settings.store.relaunchDiscord &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-relaunchdiscord"
+                        label="Relaunch Discord"
+                        action={() => relaunch()}
+                    />
+                }
+                {settings.store.notifs &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-notifications"
+                        label="Notification Log"
+                        action={openNotificationLogModal}
+                    />
+                }
+            </Menu.MenuGroup>
+
+            <Menu.MenuGroup label="Vencord Tools">
                 {settings.store.quickCss &&
                     <Menu.MenuItem
                         id="vc-toolbox-quickcss"
@@ -193,17 +225,6 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                 }
             </Menu.MenuGroup>
 
-            {...toolboxActionsNodelist}
-
-            {settings.store.pluginSettings &&
-                <Menu.MenuGroup label="Plugin Settings">
-                    {...pinnedNodelist}
-                    <Menu.MenuItem
-                        id="vc-toolbox-plugins"
-                        label="Pin or Unpin Plugins">
-                        {...allEnabledNodelist}
-                    </Menu.MenuItem>
-                </Menu.MenuGroup>}
         </Menu.Menu>
     );
 }
