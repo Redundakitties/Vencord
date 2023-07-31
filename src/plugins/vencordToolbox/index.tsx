@@ -45,23 +45,12 @@ function settingsBool(description: string, disabled = false): PluginSettingDef {
     };
 }
 
-type ToolboxActions = Record<string, () => void> | undefined;
-
-function createPluginSettings(toolboxActions: ToolboxActions) {
-    const actions = toolboxActions || {};
-    const definedSettings = Object.keys(actions)
-        .map(text => ({ [text]: settingsBool(text) }))
-        .reduce((mergedSettings, currentSetting) => ({ ...mergedSettings, ...currentSetting }), {});
-    return definedSettings;
-}
-
 const settings = definePluginSettings({
     // for enabling and disabling Vencord-wide and Discord-wide quick actions
     relaunchDiscord: settingsBool("Quit and restart discord from toolbox", IS_WEB),
     notifs: settingsBool("View notifications log from toolbox"),
     quickCss: settingsBool("Edit QuickCss from toolbox"),
     toggleQuickCss: settingsBool("Enable/Disable QuickCss from toolbox"),
-    toggleSidebar: settingsBool("Enable/Disable Sidebar from toolbox"),
     updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
 
     // for enabling and disabling misc plugin quick actions
@@ -77,7 +66,7 @@ const settings = definePluginSettings({
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
-    const ps = settings.use(["pinnedSettings", "pinnedActions", "sidebarVisible"]);
+    const ps = settings.use(["pinnedSettings", "pinnedActions"]);
     const { pinnedSettings = [], pinnedActions = [] } = ps;
 
     const allActionsRNList = [] as ReactNode[]; // all possible plugin actions
