@@ -31,6 +31,7 @@ import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
 import { findByCode } from "@webpack";
 import { Alerts, Menu, Popout, useState } from "@webpack/common";
 import type { ReactNode } from "react";
+import { Settings } from "Vencord";
 
 import plugins from "~plugins";
 
@@ -52,6 +53,9 @@ const settings = definePluginSettings({
     quickCss: settingsBool("Edit QuickCss from toolbox"),
     toggleQuickCss: settingsBool("Enable/Disable QuickCss from toolbox"),
     updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
+
+    // for enabling and disabling Vencord-wide and Discord-wide quick actions
+    discordTools: settingsBool("Pin discord tools to toolbox"),
 
     // for enabling and disabling misc plugin quick actions
     pluginActions: settingsBool("Pin plugin quick actions to toolbox"),
@@ -206,9 +210,9 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                 }
                 {settings.store.toggleQuickCss &&
                     <Menu.MenuItem
-                        id="vc-toolbox-disable-quickcss"
-                        label="Toggle QuickCSS"
-                        action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
+                        id="vc-toolbox-quickcss-toggle"
+                        label={Settings.useQuickCss ? "Disable QuickCSS" : "Enable QuickCSS"}
+                        action={() => { Settings.useQuickCss = !Settings.useQuickCss; }}
                     />
                 }
                 {!IS_WEB && settings.store.updater &&
