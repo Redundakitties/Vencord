@@ -24,7 +24,6 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import PluginModal from "@components/PluginSettings/PluginModal";
 import { openUpdaterModal } from "@components/VencordSettings/UpdaterTab";
 import { Devs } from "@utils/constants";
-import { makeLazy } from "@utils/lazy";
 import { openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
@@ -33,19 +32,9 @@ import { findByCode } from "@webpack";
 import { Alerts, Menu, Popout, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
+import plugins from "~plugins";
+
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
-
-const removeSidebar = async () => {
-    let quickCss = await VencordNative.quickCss.get();
-
-    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 0px !important; }");
-    await VencordNative.quickCss.set(quickCss);
-};
-const addSidebar = async () => {
-    let quickCss = await VencordNative.quickCss.get();
-    quickCss = quickCss.replace(/\.sidebar-1tnWFu { width: \d+px !important; }/, ".sidebar-1tnWFu { width: 165px !important; }");
-    await VencordNative.quickCss.set(quickCss);
-};
 
 function settingsBool(description: string, disabled = false): PluginSettingDef {
     return {
@@ -57,103 +46,56 @@ function settingsBool(description: string, disabled = false): PluginSettingDef {
 }
 
 const settings = definePluginSettings({
-    // for enabling and disabling Vencord-wide quick actions
+    // for enabling and disabling Vencord-wide and Discord-wide quick actions
     relaunchDiscord: settingsBool("Quit and restart discord from toolbox", IS_WEB),
     notifs: settingsBool("View notifications log from toolbox"),
     quickCss: settingsBool("Edit QuickCss from toolbox"),
     toggleQuickCss: settingsBool("Enable/Disable QuickCss from toolbox"),
-    toggleSidebar: settingsBool("Enable/Disable Sidebar from toolbox"),
     updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
 
     // for enabling and disabling misc plugin quick actions
-    DevCompanion: settingsBool("Reconnect Dev Companion from toolbox"),
+    pluginActions: settingsBool("Pin plugin quick actions to toolbox"),
 
-    // For enabling and disabling individual plugin settings menus
-    pluginSettings: settingsBool("Add plugin settings to toolbox"),
+    // for enabling and disabling individual plugin settings
+    pluginSettings: settingsBool("Pin plugin settings to toolbox"),
 }).withPrivateSettings<{
-    includedPlugins: string[];
-    sidebarVisible: boolean;
+    pinnedSettings: string[];
+    pinnedActions: string[];
 }>();
-
-// eslint-disable-next-line dot-notation
-settings["BadgeAPI"] = settingsBool("Refetch Badges from toolbox");
-// eslint-disable-next-line dot-notation
-settings["relaunchDiscord"] = settingsBool("Quit and restart discord from toolbox", IS_WEB);
 
 function VencordPopout({ onClose }: { onClose: () => void; }) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
-    const ps = settings.use(["includedPlugins", "sidebarVisible"]);
-    const { includedPlugins = [], sidebarVisible = true } = ps;
-    const getAllPlugins = makeLazy(() => Object.values(Vencord.Plugins.plugins));
+    const ps = settings.use(["pinnedSettings", "pinnedActions"]);
+    const { pinnedSettings = [], pinnedActions = [] } = ps;
 
-    // for Vencord-wide quick actions ex) toggle quickCss, updater tab, notification log
-    const pluginEnabledEntries = [] as string[];
-    for (const [settingsName, enabled] of Object.entries(settings.store)) {
-        if (enabled) {
-            pluginEnabledEntries.push(settingsName);
-        }
-    }
-    return (
-        <Menu.Menu
-            navId="vc-toolbox"
-            onClose={onClose}>
+    const allSettingsRNList = [] as ReactNode[]; // all enabled plugins if they have settings
+    const pinnedSettingsRNList = [] as ReactNode[]; // pinned plugin settings
+    const allActionsRNList = [] as ReactNode[]; // all possible plugin actions
+    const pinnedActionsRNList = [] as ReactNode[]; // pinned actions
 
-            {!IS_WEB && settings.store.relaunchDiscord &&
-                <Menu.MenuItem
-                    id="vc-toolbox-relaunchdiscord"
-                    label="Relaunch Discord"
-                    action={() => relaunch()}
+    for (const plugin of Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
+        if (plugin.toolboxActions) {
+            const checkedActions = pinnedActions.some(p => p === plugin.name);
+            allActionsRNList.push(
+                <Menu.MenuCheckboxItem
+                    key={"vc-toolbox-actioncb-key-" + plugin.name}
+                    id={"vc-toolbox-actioncb-" + plugin.name}
+                    label={plugin.name}
+                    checked={checkedActions}
+                    action={() => { // when checkedActions pins action to toolbox
+                        ps.pinnedActions = checkedActions
+                            ? pinnedActions.filter(p => p !== plugin.name)
+                            : [...pinnedActions, plugin.name];
+                    }}
                 />
-            }
+            );
 
-            {settings.store.notifs &&
-                <Menu.MenuItem
-                    id="vc-toolbox-notifications"
-                    label="Notification Log"
-                    action={openNotificationLogModal}
-                />
-            }
-            <Menu.MenuGroup label="Vencord Settings">
-                {settings.store.quickCss &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-quickcss"
-                        label="Edit QuickCSS"
-                        action={() => VencordNative.quickCss.openEditor()}
-                    />
-                }
-
-                {settings.store.toggleQuickCss &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-disable-quickcss"
-                        label="Toggle QuickCSS"
-                        action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
-                    />
-                }
-
-                {(settings.store.sidebarVisible &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-disable-sidebar"
-                        label="Toggle Sidebar"
-                        action={() => { ps.sidebarVisible ? removeSidebar() : addSidebar(); ps.sidebarVisible = !ps.sidebarVisible; }}
-                    />
-                )}
-
-                {!IS_WEB && settings.store.updater &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-updater-tab"
-                        label="Open Updater"
-                        action={openUpdaterModal}
-                    />
-                }
-            </Menu.MenuGroup>
-
-            {getAllPlugins() // misc plugin quick actions ex) DevCompanion and BadgesAPI
-                .filter(plugin => plugin.toolboxActions && Vencord.Plugins.isPluginEnabled(plugin.name) && pluginEnabledEntries.includes(plugin.name))
-                .map(plugin => (
+            if (pinnedActions.includes(plugin.name)) { // actions pinned to toolbox
+                pinnedActionsRNList.push(
                     <Menu.MenuGroup
                         label={plugin.name}
                         key={`vc-toolbox-${plugin.name}`}>
-                        {plugin.toolboxActions && Object.entries(plugin.toolboxActions).map(([text, action]) => {
+                        {Object.entries(plugin.toolboxActions).map(([text, action]) => {
                             const key = `vc-toolbox-${plugin.name}-${text}`;
                             return (
                                 <Menu.MenuItem
@@ -165,61 +107,119 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                             );
                         })}
                     </Menu.MenuGroup>
-                ))
+                );
             }
+        }
 
-            {settings.store.pluginSettings && // Main plugin setttings dropdown w/ checkboxes
-                <Menu.MenuGroup label="Plugin Settings">
-                    {getAllPlugins()
-                        .filter(plugin => includedPlugins.includes(plugin.name))
-                        .map(plugin => {
-                            return (
-                                <Menu.MenuItem
-                                    id={"vc-toolbox-checkbox-" + plugin.name}
-                                    key={"vc-toolbox-checkbox-key-" + plugin.name}
-                                    label={plugin.name}
-                                    action={() => {
-                                        openModal(modalProps => (
-                                            <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => {
-                                                Alerts.show({
-                                                    title: "Restart required",
-                                                    body: (
-                                                        <>
-                                                            <p>The following plugins require a restart:</p>
-                                                            <div>{plugin.name}</div>
-                                                        </>
-                                                    ),
-                                                    confirmText: "Restart now",
-                                                    cancelText: "Later!",
-                                                    onConfirm: () => location.reload()
-                                                });
-                                            }} />
-                                        ));
-                                    }}
-                                />
-                            );
-                        })}
+        if (plugin.settings) { // if plugin has settings make checkbox option
+            const checkedSettings = pinnedSettings.some(p => p === plugin.name);
+            allSettingsRNList.push(
+                <Menu.MenuCheckboxItem
+                    key={"vc-toolbox-checkbox-key-" + plugin.name}
+                    id={"vc-toolbox-checkbox-" + plugin.name}
+                    label={plugin.name}
+                    checked={checkedSettings}
+                    action={() => { // when checkedSettings pins plugin to toolbox
+                        ps.pinnedSettings = checkedSettings
+                            ? pinnedSettings.filter(p => p !== plugin.name)
+                            : [...pinnedSettings, plugin.name];
+                    }}
+                />
+            );
+            if (pinnedSettings.includes(plugin.name)) { // plugins that have been pinned to toolbox
+                pinnedSettingsRNList.push(
+                    <Menu.MenuItem
+                        id={"vc-toolbox-settings-" + plugin.name}
+                        key={"vc-toolbox-settings-key-" + plugin.name}
+                        label={plugin.name}
+                        action={() => {
+                            openModal(modalProps => (
+                                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => {
+                                    Alerts.show({
+                                        title: "Restart required",
+                                        body: (
+                                            <>
+                                                <p>The following plugins require a restart:</p>
+                                                <div>{plugin.name}</div>
+                                            </>
+                                        ),
+                                        confirmText: "Restart now",
+                                        cancelText: "Later!",
+                                        onConfirm: () => location.reload()
+                                    });
+                                }} />
+                            ));
+                        }}
+                    />
+                );
+            }
+        }
+    }
+
+    return (
+        <Menu.Menu
+            navId="vc-toolbox"
+            onClose={onClose}>
+            <Menu.MenuGroup label="Custom Actions">
+                {settings.store.pluginActions &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-actions"
+                        label="Pin or Unpin Actions">
+                        {...allActionsRNList}
+                    </Menu.MenuItem>
+                }
+            </Menu.MenuGroup>
+            {...pinnedActionsRNList}
+
+            <Menu.MenuGroup label="Plugin Settings">
+                {settings.store.pluginSettings &&
                     <Menu.MenuItem
                         id="vc-toolbox-plugins"
-                        label="Add or Remove Plugins">
-                        {getAllPlugins().filter(p => p.settings && Vencord.Plugins.isPluginEnabled(p.name)).map(plugin => {
-                            const checked = includedPlugins.some(p => p === plugin.name);
-                            return (
-                                <Menu.MenuCheckboxItem
-                                    key={"vc-toolbox-settings-key-" + plugin.name}
-                                    id={"vc-toolbox-settings-" + plugin.name}
-                                    label={plugin.name}
-                                    checked={checked}
-                                    action={() => { // when checked adds plugin to toolbox
-                                        ps.includedPlugins = checked
-                                            ? includedPlugins.filter(p => p !== plugin.name)
-                                            : [...includedPlugins, plugin.name];
-                                    }}
-                                />
-                            );
-                        })}
+                        label="Pin or Unpin Plugins">
+                        {...allSettingsRNList}
                     </Menu.MenuItem>
-                </Menu.MenuGroup>}
+                }
+                {...pinnedSettingsRNList}
+            </Menu.MenuGroup>
+
+            <Menu.MenuGroup label="App Tools">
+                {!IS_WEB && settings.store.relaunchDiscord &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-relaunchdiscord"
+                        label="Relaunch Discord"
+                        action={() => relaunch()}
+                    />
+                }
+                {settings.store.notifs &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-notifications"
+                        label="Notification Log"
+                        action={openNotificationLogModal}
+                    />
+                }
+                {settings.store.quickCss &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-quickcss"
+                        label="Edit QuickCSS"
+                        action={() => VencordNative.quickCss.openEditor()}
+                    />
+                }
+                {settings.store.toggleQuickCss &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-disable-quickcss"
+                        label="Toggle QuickCSS"
+                        action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
+                    />
+                }
+                {!IS_WEB && settings.store.updater &&
+                    <Menu.MenuItem
+                        id="vc-toolbox-updater-tab"
+                        label="Open Updater"
+                        action={openUpdaterModal}
+                    />
+                }
+            </Menu.MenuGroup>
+
         </Menu.Menu>
     );
 }
