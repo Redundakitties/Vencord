@@ -1,4 +1,5 @@
 .vc-toolbox-btn,
+.vc-toolbox-btn svg,
 .vc-toolbox-btn svg path {
     -webkit-app-region: no-drag;
     color: var(--interactive-normal);
