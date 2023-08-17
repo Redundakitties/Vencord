@@ -1,6 +1,6 @@
 /*
  * Vencord, a modification for Discord's desktop app
- * Copyright (c) 2022 Vendicated and contributors
+ * Copyright (c) 2023 Vendicated and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,20 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Devs } from "@utils/constants";
-import { LazyComponent } from "@utils/react";
-import definePlugin from "@utils/types";
+/**
+ * @param {string} filePath
+ * @returns {string | null}
+ */
+export function getPluginTarget(filePath) {
+    const pathParts = filePath.split(/[/\\]/);
+    if (/^index\.tsx?$/.test(filePath.at(-1))) pathParts.pop();
 
-export default definePlugin({
-    name: "StartupTimings",
-    description: "Adds Startup Timings to the Settings menu",
-    authors: [Devs.Megu],
-    patches: [{
-        find: "PAYMENT_FLOW_MODAL_TEST_PAGE,",
-        replacement: {
-            match: /{section:.{1,2}\..{1,3}\.PAYMENT_FLOW_MODAL_TEST_PAGE/,
-            replace: '{section:"StartupTimings",label:"Startup Timings",element:$self.StartupTimingPage},$&'
-        }
-    }],
-    StartupTimingPage: LazyComponent(() => require("./StartupTimingPage").default)
-});
+    const identifier = pathParts.at(-1).replace(/\.tsx?$/, "");
+    const identiferBits = identifier.split(".");
+    return identiferBits.length === 1 ? null : identiferBits.at(-1);
+}
