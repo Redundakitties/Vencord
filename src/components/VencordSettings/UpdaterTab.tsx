@@ -22,11 +22,10 @@ import { Flex } from "@components/Flex";
 import { Link } from "@components/Link";
 import { Margins } from "@utils/margins";
 import { classes } from "@utils/misc";
-import { ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { useAwaiter } from "@utils/react";
 import { changes, checkForUpdates, getRepo, isNewer, update, updateError, UpdateLogger } from "@utils/updater";
-import { Alerts, Button, Card, Forms, Parser, React, Switch, Text, Toasts } from "@webpack/common";
+import { Alerts, Button, Card, Forms, Parser, React, Switch, Toasts } from "@webpack/common";
 
 import gitHash from "~git-hash";
 
@@ -183,7 +182,9 @@ function Newer(props: CommonProps) {
     );
 }
 
-function UpdaterBody() {
+function Updater() {
+    const settings = useSettings(["notifyAboutUpdates", "autoUpdate", "autoUpdateNotification"]);
+
     const [repo, err, repoPending] = useAwaiter(getRepo, { fallbackValue: "Loading..." });
 
     React.useEffect(() => {
@@ -195,32 +196,6 @@ function UpdaterBody() {
         repo,
         repoPending
     };
-
-    return (
-        <>
-            <Forms.FormTitle tag="h5">Repo</Forms.FormTitle>
-            <Forms.FormText className="vc-text-selectable">
-                {repoPending
-                    ? repo
-                    : err
-                        ? "Failed to retrieve - check console"
-                        : (
-                            <Link href={repo}>
-                                {repo.split("/").slice(-2).join("/")}
-                            </Link>
-                        )}
-                {" "}(<HashLink hash={gitHash} repo={repo} disabled={repoPending} />)
-            </Forms.FormText>
-            <Forms.FormDivider className={Margins.top8 + " " + Margins.bottom8} />
-            <Forms.FormTitle tag="h5">Updates</Forms.FormTitle>
-
-            {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
-        </>
-    );
-}
-
-function Updater() {
-    const settings = useSettings(["notifyAboutUpdates", "autoUpdate", "autoUpdateNotification"]);
 
     return (
         <SettingsTab title="Vencord Updater">
@@ -249,34 +224,29 @@ function Updater() {
                 Get notified when an automatic update completes
             </Switch>
 
-            <UpdaterBody />
+            <Forms.FormTitle tag="h5">Repo</Forms.FormTitle>
 
+            <Forms.FormText className="vc-text-selectable">
+                {repoPending
+                    ? repo
+                    : err
+                        ? "Failed to retrieve - check console"
+                        : (
+                            <Link href={repo}>
+                                {repo.split("/").slice(-2).join("/")}
+                            </Link>
+                        )
+                }
+                {" "}(<HashLink hash={gitHash} repo={repo} disabled={repoPending} />)
+            </Forms.FormText>
+
+            <Forms.FormDivider className={Margins.top8 + " " + Margins.bottom8} />
+
+            <Forms.FormTitle tag="h5">Updates</Forms.FormTitle>
+
+            {isNewer ? <Newer {...commonProps} /> : <Updatable {...commonProps} />}
         </SettingsTab>
     );
-}
-
-function UpdaterModal({ modalProps }: { modalProps: ModalProps; }) {
-    return (
-        <ModalRoot {...modalProps} size={ModalSize.LARGE}>
-            <ModalHeader>
-                <Text variant="heading-lg/semibold" style={{ flexGrow: 1 }}>Vencord Updater</Text>
-                <ModalCloseButton onClick={modalProps.onClose} />
-            </ModalHeader>
-
-            <ModalContent>
-                <UpdaterBody />;
-            </ModalContent>
-
-        </ModalRoot>
-    );
-}
-
-export function openUpdaterModal() {
-    openModal(modalProps => (
-        <UpdaterModal
-            modalProps={modalProps}
-        />
-    ));
 }
 
 export default IS_UPDATER_DISABLED ? null : wrapTab(Updater, "Updater");

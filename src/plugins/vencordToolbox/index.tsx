@@ -22,7 +22,6 @@ import { openNotificationLogModal } from "@api/Notifications/notificationLog";
 import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import PluginModal from "@components/PluginSettings/PluginModal";
-import { openUpdaterModal } from "@components/VencordSettings/UpdaterTab";
 import { Devs } from "@utils/constants";
 import { openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
@@ -51,7 +50,6 @@ const settings = definePluginSettings({
     notifs: settingsBool("View notifications log from toolbox"),
     quickCss: settingsBool("Edit QuickCss from toolbox"),
     toggleQuickCss: settingsBool("Enable/Disable QuickCss from toolbox"),
-    updater: settingsBool("Open UpdaterTab from toolbox", IS_WEB),
 
     // for enabling and disabling misc plugin quick actions
     pluginActions: settingsBool("Pin plugin quick actions to toolbox"),
@@ -209,13 +207,6 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         id="vc-toolbox-disable-quickcss"
                         label="Toggle QuickCSS"
                         action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
-                    />
-                }
-                {!IS_WEB && settings.store.updater &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-updater-tab"
-                        label="Open Updater"
-                        action={openUpdaterModal}
                     />
                 }
             </Menu.MenuGroup>

@@ -398,12 +398,6 @@ export default definePlugin({
     stop: () => setRpc(true),
     settings,
 
-    toolboxActions: {
-        "Validate"() {
-            console.log("HI");
-        }
-    },
-
     settingsAboutComponent: () => {
         const activity = useAwaiter(createActivity);
         return (

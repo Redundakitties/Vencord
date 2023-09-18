@@ -43,11 +43,6 @@ const settings = definePluginSettings({
             { label: "Normal Message (you can greet spam)", value: GreetMode.NormalMessage }
         ],
         description: "Choose the greet mode"
-    },
-    unholyMultiGreetEnabled: {
-        type: OptionType.BOOLEAN,
-        default: false,
-        description: "Enable unholy greet mode"
     }
 }).withPrivateSettings<{
     multiGreetChoices?: string[];
