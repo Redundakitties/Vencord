@@ -28,10 +28,10 @@ import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
 import { findByCode } from "@webpack";
-import { Alerts, Menu, Popout, useState } from "@webpack/common";
+import { Menu, Popout, showToast, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
-import plugins from "~plugins";
+import Plugins from "~plugins";
 
 const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
 
@@ -71,7 +71,7 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
     const allActionsRNList = [] as ReactNode[]; // all possible plugin actions
     const pinnedActionsRNList = [] as ReactNode[]; // pinned actions
 
-    for (const plugin of Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
+    for (const plugin of Object.values(Plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
         if (plugin.toolboxActions) {
             const checkedActions = pinnedActions.some(p => p === plugin.name);
             allActionsRNList.push(
@@ -132,20 +132,7 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         label={plugin.name}
                         action={() => {
                             openModal(modalProps => (
-                                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => {
-                                    Alerts.show({
-                                        title: "Restart required",
-                                        body: (
-                                            <>
-                                                <p>The following plugins require a restart:</p>
-                                                <div>{plugin.name}</div>
-                                            </>
-                                        ),
-                                        confirmText: "Restart now",
-                                        cancelText: "Later!",
-                                        onConfirm: () => location.reload()
-                                    });
-                                }} />
+                                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => showToast("Restart to apply changes!")} />
                             ));
                         }}
                     />
@@ -203,10 +190,14 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                     />
                 }
                 {settings.store.toggleQuickCss &&
-                    <Menu.MenuItem
-                        id="vc-toolbox-disable-quickcss"
-                        label="Toggle QuickCSS"
-                        action={() => { Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss; }}
+                    <Menu.MenuCheckboxItem
+                        id="vc-toolbox-quickcss-toggle"
+                        checked={Vencord.Settings.useQuickCss}
+                        label={"Enable QuickCSS"}
+                        action={() => {
+                            Vencord.Settings.useQuickCss = !Vencord.Settings.useQuickCss;
+                            onClose();
+                        }}
                     />
                 }
             </Menu.MenuGroup>
@@ -261,7 +252,7 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
 
 export default definePlugin({
     name: "VencordToolbox",
-    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions.",
+    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions",
     authors: [Devs.Ven, Devs.AutumnVN],
     settings,
 

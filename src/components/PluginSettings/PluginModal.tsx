@@ -40,7 +40,7 @@ import {
     SettingSliderComponent,
     SettingTextComponent
 } from "./components";
-import { openContributorModal } from "./ContributorModal";
+// import { openContributorModal } from "./ContributorModal";
 
 const UserSummaryItem = LazyComponent(() => findByCode("defaultRenderUser", "showDefaultAvatarsForNullUsers"));
 const AvatarStyles = findByPropsLazy("moreUsers", "emptyUser", "avatarContainer", "clickableAvatar");
@@ -205,7 +205,7 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
                             renderUser={(user: User) => (
                                 <Clickable
                                     className={AvatarStyles.clickableAvatar}
-                                    onClick={() => openContributorModal(user)}
+                                    onClick={() => console.log("HI")}
                                 >
                                     <img
                                         className={AvatarStyles.avatar}

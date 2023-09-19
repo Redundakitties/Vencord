@@ -39,7 +39,6 @@ import Plugins from "~plugins";
 
 import { startDependenciesRecursive, startPlugin, stopPlugin } from "../../plugins";
 
-
 const cl = classNameFactory("vc-plugins-");
 const logger = new Logger("PluginSettings", "#a6d189");
 
