@@ -27,13 +27,16 @@ import { openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
-import { findByCode } from "@webpack";
+import { filters, find } from "@webpack";
 import { Menu, Popout, showToast, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
 import Plugins from "~plugins";
 
-const HeaderBarIcon = LazyComponent(() => findByCode(".HEADER_BAR_BADGE,", ".tooltip"));
+const HeaderBarIcon = LazyComponent(() => {
+    const filter = filters.byCode(".HEADER_BAR_BADGE");
+    return find(m => m.Icon && filter(m.Icon)).Icon;
+});
 
 function settingsBool(description: string, disabled = false): PluginSettingDef {
     return {
@@ -258,7 +261,7 @@ export default definePlugin({
 
     patches: [
         {
-            find: ".mobileToolbar",
+            find: "toolbar:function",
             replacement: {
                 match: /(?<=toolbar:function.{0,100}\()\i.Fragment,/,
                 replace: "$self.ToolboxFragmentWrapper,"
