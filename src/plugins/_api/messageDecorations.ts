@@ -25,10 +25,10 @@ export default definePlugin({
     authors: [Devs.TheSun],
     patches: [
         {
-            find: ".withMentionPrefix",
+            find: '"Message Username"',
             replacement: {
-                match: /currentUserIsPremium:.{0,70}{children:\i(?=}\))/,
-                replace: "$&.concat(Vencord.Api.MessageDecorations.__addDecorationsToMessage(arguments[0]))"
+                match: /\.Messages\.GUILD_COMMUNICATION_DISABLED_BOTTOM_SHEET_TITLE.+?}\),\i(?=\])/,
+                replace: "$&,...Vencord.Api.MessageDecorations.__addDecorationsToMessage(arguments[0])"
             }
         }
     ],

@@ -18,8 +18,9 @@
 
 import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
+import { proxyLazy } from "@utils/lazy";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByPropsLazy } from "@webpack";
+import { findByProps, findByPropsLazy } from "@webpack";
 import { ContextMenu, FluxDispatcher, Menu } from "@webpack/common";
 import { Channel, Message } from "discord-types/general";
 
@@ -55,6 +56,7 @@ const settings = definePluginSettings({
 }>();
 
 const MessageActions = findByPropsLazy("sendGreetMessage");
+const WELCOME_STICKERS = proxyLazy(() => findByProps("WELCOME_STICKERS")?.WELCOME_STICKERS);
 
 function greet(channel: Channel, message: Message, stickers: string[]) {
     const options = MessageActions.getSendMessageOptionsForReply({
@@ -80,7 +82,7 @@ function greet(channel: Channel, message: Message, stickers: string[]) {
 }
 
 
-function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], message: Message, channel: Channel; }) {
+function GreetMenu({ channel, message }: { message: Message, channel: Channel; }) {
     const s = settings.use(["greetMode", "multiGreetChoices"]);
     const { greetMode, multiGreetChoices = [] } = s;
 
@@ -110,7 +112,7 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
             <Menu.MenuGroup
                 label="Greet Stickers"
             >
-                {stickers.map(sticker => (
+                {WELCOME_STICKERS.map(sticker => (
                     <Menu.MenuItem
                         key={sticker.id}
                         id={"greet-" + sticker.id}
@@ -128,7 +130,7 @@ function GreetMenu({ stickers, channel, message }: { stickers: Sticker[], messag
                         label="Unholy Multi-Greet"
                         id="unholy-multi-greet"
                     >
-                        {stickers.map(sticker => {
+                        {WELCOME_STICKERS.map(sticker => {
                             const checked = multiGreetChoices.some(s => s === sticker.id);
 
                             return (
@@ -173,21 +175,20 @@ export default definePlugin({
         {
             find: "Messages.WELCOME_CTA_LABEL",
             replacement: {
-                match: /innerClassName:\i\(\).welcomeCTAButton,(?<=%\i\.length;return (\i)\[\i\].+?)/,
-                replace: "$&onContextMenu:(e)=>$self.pickSticker(e,$1,arguments[0]),"
+                match: /innerClassName:\i\.welcomeCTAButton,(?<={channel:\i,message:\i}=(\i).{0,400}?)/,
+                replace: "$&onContextMenu:(vcEvent)=>$self.pickSticker(vcEvent, $1),"
             }
         }
     ],
 
     pickSticker(
         event: React.UIEvent,
-        stickers: Sticker[],
         props: {
             channel: Channel,
             message: Message;
         }
     ) {
         if (!(props.message as any).deleted)
-            ContextMenu.open(event, () => <GreetMenu stickers={stickers} {...props} />);
+            ContextMenu.open(event, () => <GreetMenu {...props} />);
     }
 });
