@@ -20,7 +20,6 @@ import { addAccessory } from "@api/MessageAccessories";
 import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants.js";
-import { getCurrentGuild } from "@utils/discord";
 import { classes } from "@utils/misc";
 import { Queue } from "@utils/Queue";
 import { LazyComponent } from "@utils/react";
@@ -71,12 +70,6 @@ interface MessageEmbedProps {
 const messageFetchQueue = new Queue();
 
 const settings = definePluginSettings({
-    serverList: {
-        description:
-            "List of servers to exempt message embeds for (separated by spaces)",
-        type: OptionType.STRING,
-        default: "1234567890123445",
-    },
     messageBackgroundColor: {
         description: "Background color for messages in rich embeds",
         type: OptionType.BOOLEAN
@@ -375,12 +368,6 @@ export default definePlugin({
         addAccessory("messageLinkEmbed", props => {
             if (!messageLinkRegex.test(props.message.content))
                 return null;
-
-            //  serverList blacklist
-            const currGuild = getCurrentGuild()?.id ?? "@me";
-            if (settings.store.serverList.includes(currGuild)) {
-                return null;
-            }
 
             // need to reset the regex because it's global
             messageLinkRegex.lastIndex = 0;

@@ -19,21 +19,17 @@
 import "./index.css";
 
 import { openNotificationLogModal } from "@api/Notifications/notificationLog";
-import { definePluginSettings } from "@api/Settings";
+import { definePluginSettings, Settings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
-import PluginModal from "@components/PluginSettings/PluginModal";
 import { openUpdaterModal } from "@components/VencordSettings/UpdaterTab";
 import { Devs } from "@utils/constants";
-import { openModal } from "@utils/modal";
 import { relaunch } from "@utils/native";
 import { LazyComponent } from "@utils/react";
 import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
 import { filters, find } from "@webpack";
-import { Alerts, Menu, Popout, useState } from "@webpack/common";
+import { Menu, Popout, useState } from "@webpack/common";
 import type { ReactNode } from "react";
-import { Settings } from "Vencord";
 
-import plugins from "~plugins";
 
 const HeaderBarIcon = LazyComponent(() => {
     const filter = filters.byCode(".HEADER_BAR_BADGE");
@@ -70,7 +66,7 @@ const settings = definePluginSettings({
     pinnedActions: string[];
 }>();
 
-function VencordPopout({ onClose }: { onClose: () => void; }) {
+function VencordPopout(onClose: () => void) {
     // keeps track of added plugin settings entries ex) textreplace, quickreply
     const ps = settings.use(["pinnedSettings", "pinnedActions"]);
     const { pinnedSettings = [], pinnedActions = [] } = ps;
@@ -80,7 +76,7 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
     const allActionsRNList = [] as ReactNode[]; // all possible plugin actions
     const pinnedActionsRNList = [] as ReactNode[]; // pinned actions
 
-    for (const plugin of Object.values(plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
+    for (const plugin of Object.values(Vencord.Plugins.plugins).filter(p => Vencord.Plugins.isPluginEnabled(p.name))) {
         if (plugin.toolboxActions) {
             const checkedActions = pinnedActions.some(p => p === plugin.name);
             allActionsRNList.push(
@@ -140,22 +136,12 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                         key={"vc-toolbox-settings-key-" + plugin.name}
                         label={plugin.name}
                         action={() => {
-                            openModal(modalProps => (
-                                <PluginModal {...modalProps} plugin={plugin} onRestartNeeded={() => {
-                                    Alerts.show({
-                                        title: "Restart required",
-                                        body: (
-                                            <>
-                                                <p>The following plugins require a restart:</p>
-                                                <div>{plugin.name}</div>
-                                            </>
-                                        ),
-                                        confirmText: "Restart now",
-                                        cancelText: "Later!",
-                                        onConfirm: () => location.reload()
-                                    });
-                                }} />
-                            ));
+                            // openModal(modalProps => (
+                            //  <PluginModal
+                            //    {...modalProps}
+                            //  plugin={plugin}
+                            // onRestartNeeded={() => showToast("Restart to apply changes!")} />
+                            // ));
                         }}
                     />
                 );
@@ -166,7 +152,8 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
     return (
         <Menu.Menu
             navId="vc-toolbox"
-            onClose={onClose}>
+            onClose={onClose}
+        >
             <Menu.MenuGroup label="Custom Actions">
                 {settings.store.pluginActions &&
                     <Menu.MenuItem
@@ -212,10 +199,14 @@ function VencordPopout({ onClose }: { onClose: () => void; }) {
                     />
                 }
                 {settings.store.toggleQuickCss &&
-                    <Menu.MenuItem
+                    <Menu.MenuCheckboxItem
                         id="vc-toolbox-quickcss-toggle"
-                        label={Settings.useQuickCss ? "Disable QuickCSS" : "Enable QuickCSS"}
-                        action={() => { Settings.useQuickCss = !Settings.useQuickCss; }}
+                        checked={Settings.useQuickCss}
+                        label={"Enable QuickCSS"}
+                        action={() => {
+                            Settings.useQuickCss = !Settings.useQuickCss;
+                            onClose();
+                        }}
                     />
                 }
                 {!IS_WEB && settings.store.updater &&
@@ -249,7 +240,7 @@ function VencordPopoutButton() {
             animation={Popout.Animation.NONE}
             shouldShow={show}
             onRequestClose={() => setShow(false)}
-            renderPopout={() => <VencordPopout onClose={() => setShow(false)} />}
+            renderPopout={() => VencordPopout(() => setShow(false))}
         >
             {(_, { isShown }) => (
                 <HeaderBarIcon
@@ -277,7 +268,7 @@ function ToolboxFragmentWrapper({ children }: { children: ReactNode[]; }) {
 
 export default definePlugin({
     name: "VencordToolbox",
-    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions.",
+    description: "Adds a button next to the inbox button in the channel header that houses Vencord quick actions",
     authors: [Devs.Ven, Devs.AutumnVN],
     settings,
 
