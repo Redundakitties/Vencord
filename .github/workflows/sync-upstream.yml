@@ -22,7 +22,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: sync with main
+      - name: sync with backupofmain
         uses: dabreadman/sync-upstream-repo@v1.3.0
         with: 
           upstream_repo: ${{ env.UPSTREAM_URL }}
@@ -30,19 +30,27 @@ jobs:
           downstream_branch: ${{ env.DOWNSTREAM_BRANCH }}
           token: ${{ secrets.TOKEN }} 
           spawn_logs: ${{ env.SPAWN_LOGS }}
-      - name: sync with maindev
-        uses: dabreadman/sync-upstream-repo@v1.3.0
-        with: 
-          upstream_repo: ${{ env.UPSTREAM_URL }}
-          upstream_branch: ${{ env.UPSTREAM_BRANCH }}
-          downstream_branch: maindev
-          token: ${{ secrets.TOKEN }} 
-          spawn_logs: ${{ env.SPAWN_LOGS }}
-      - name: sync with desktopdev
-        uses: dabreadman/sync-upstream-repo@v1.3.0
-        with: 
-          upstream_repo: ${{ env.UPSTREAM_URL }}
-          upstream_branch: ${{ env.UPSTREAM_BRANCH }}
-          downstream_branch: desktopdev
-          token: ${{ secrets.TOKEN }} 
-          spawn_logs: ${{ env.SPAWN_LOGS }}
+      # - name: sync with main
+      #   uses: dabreadman/sync-upstream-repo@v1.3.0
+      #   with: 
+      #     upstream_repo: ${{ env.UPSTREAM_URL }}
+      #     upstream_branch: ${{ env.UPSTREAM_BRANCH }}
+      #     downstream_branch: ${{ env.DOWNSTREAM_BRANCH }}
+      #     token: ${{ secrets.TOKEN }} 
+      #     spawn_logs: ${{ env.SPAWN_LOGS }}
+      # - name: sync with maindev
+      #   uses: dabreadman/sync-upstream-repo@v1.3.0
+      #   with: 
+      #     upstream_repo: ${{ env.UPSTREAM_URL }}
+      #     upstream_branch: ${{ env.UPSTREAM_BRANCH }}
+      #     downstream_branch: maindev
+      #     token: ${{ secrets.TOKEN }} 
+      #     spawn_logs: ${{ env.SPAWN_LOGS }}
+      # - name: sync with desktopdev
+      #   uses: dabreadman/sync-upstream-repo@v1.3.0
+      #   with: 
+      #     upstream_repo: ${{ env.UPSTREAM_URL }}
+      #     upstream_branch: ${{ env.UPSTREAM_BRANCH }}
+      #     downstream_branch: desktopdev
+      #     token: ${{ secrets.TOKEN }} 
+      #     spawn_logs: ${{ env.SPAWN_LOGS }}
