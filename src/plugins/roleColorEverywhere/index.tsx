@@ -20,7 +20,7 @@ import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
-import { ChannelStore, GuildMemberStore, GuildStore } from "@webpack/common";
+import { ChannelStore, GuildMemberStore, GuildStore, SelectedChannelStore, SelectedGuildStore, UserStore } from "@webpack/common";
 
 const settings = definePluginSettings({
     chatMentions: {
@@ -99,6 +99,26 @@ export default definePlugin({
                 }
             ],
             predicate: () => settings.store.voiceUsers,
+        },
+        // {
+        //     find: "className:s()(r.title,n),",
+        //     replacement: [
+        //         {
+        //             match: /color:"none"/,
+        //             replace: "color:\"roleColor\""
+        //         },
+        //         {
+        //             match: /variant:"text-sm\/normal"/,
+        //             replace: "variant:\"text-sm/medium\""
+        //         },
+        //     ]
+        // },
+        {
+            find: "default.colors).map(",
+            replacement: {
+                match: /case"none.{0,15};/,
+                replace: "case\"none\":t=$self.getGuildChannelId(e);"
+            }
         }
     ],
     settings,
@@ -113,9 +133,18 @@ export default definePlugin({
         return colorString && parseInt(colorString.slice(1), 16);
     },
 
+    getGuildChannelId(component) {
+        if (!component.className.startsWith("title")) {
+            return "void 0";
+        }
+        return this.getColor(UserStore.getCurrentUser().id, {
+            channelId: SelectedChannelStore.getChannelId(),
+            guildId: SelectedGuildStore.getGuildId(),
+        });
+    },
+
     roleGroupColor: ErrorBoundary.wrap(({ id, count, title, guildId, label }: { id: string; count: number; title: string; guildId: string; label: string; }) => {
         const role = GuildStore.getRole(guildId, id);
-
         return (
             <span style={{
                 color: role?.colorString,
