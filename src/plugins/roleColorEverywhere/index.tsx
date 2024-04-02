@@ -100,24 +100,24 @@ export default definePlugin({
             ],
             predicate: () => settings.store.voiceUsers,
         },
-        // {
-        //     find: "className:s()(r.title,n),",
-        //     replacement: [
-        //         {
-        //             match: /color:"none"/,
-        //             replace: "color:\"roleColor\""
-        //         },
-        //         {
-        //             match: /variant:"text-sm\/normal"/,
-        //             replace: "variant:\"text-sm/medium\""
-        //         },
-        //     ]
-        // },
+        {
+            find: "className:s()(r.title,n),",
+            replacement: [
+                {
+                    match: /color:"none"/,
+                    replace: "color:\"roleColor\""
+                },
+                {
+                    match: /variant:"text-sm\/normal"/,
+                    replace: "variant:\"text-sm/medium\""
+                },
+            ]
+        },
         {
             find: "default.colors).map(",
             replacement: {
                 match: /case"none.{0,15};/,
-                replace: "case\"none\":t=$self.getGuildChannelId(e);"
+                replace: "case\"roleColor\":t=$self.getGuildChannelId();"
             }
         }
     ],
