@@ -133,10 +133,7 @@ export default definePlugin({
         return colorString && parseInt(colorString.slice(1), 16);
     },
 
-    getGuildChannelId(component) {
-        if (!component.className.startsWith("title")) {
-            return "void 0";
-        }
+    getGuildChannelId() {
         return this.getColor(UserStore.getCurrentUser().id, {
             channelId: SelectedChannelStore.getChannelId(),
             guildId: SelectedGuildStore.getGuildId(),
