@@ -100,6 +100,7 @@ export default definePlugin({
             ],
             predicate: () => settings.store.voiceUsers,
         },
+
         {
             find: "className:s()(r.title,n),",
             replacement: [
@@ -116,8 +117,8 @@ export default definePlugin({
         {
             find: "default.colors).map(",
             replacement: {
-                match: /case"none.{0,15};/,
-                replace: "case\"roleColor\":t=$self.getGuildChannelId();"
+                match: /let (\w),{variant.{225,250}case"currentColor".{10,20};break;/,
+                replace: "$&case\"roleColor\":$1=$self.getGuildChannelId();break;"
             }
         }
     ],
