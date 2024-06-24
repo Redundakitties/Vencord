@@ -40,8 +40,15 @@ const settings = definePluginSettings({
         default: true,
         description: "Show role colors in the voice chat user list",
         restartNeeded: true
+    },
+    reactorsList: {
+        type: OptionType.BOOLEAN,
+        default: true,
+        description: "Show role colors in the reactors list",
+        restartNeeded: true
     }
 });
+
 
 export default definePlugin({
     name: "RoleColorEverywhere",
@@ -64,7 +71,7 @@ export default definePlugin({
             find: ".userTooltip,children",
             replacement: [
                 {
-                    match: /let\{id:(\i),guildId:(\i)[^}]*\}.*?\.default,{(?=children)/,
+                    match: /let\{id:(\i),guildId:(\i)[^}]*\}.*?\.\i,{(?=children)/,
                     replace: "$&color:$self.getUserColor($1,{guildId:$2}),"
                 }
             ],
@@ -120,6 +127,14 @@ export default definePlugin({
                 match: /let (\w),{variant.{225,250}case"currentColor".{10,20};break;/,
                 replace: "$&case\"roleColor\":$1=$self.getGuildChannelId();break;"
             }
+        },
+        {
+            find: ".reactorDefault",
+            replacement: {
+                match: /,onContextMenu:e=>.{0,15}\((\i),(\i),(\i)\).{0,250}tag:"strong"/,
+                replace: "$&,style:{color:$self.getColor($2?.id,$1)}"
+            },
+            predicate: () => settings.store.reactorsList,
         }
     ],
     settings,
