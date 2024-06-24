@@ -109,7 +109,7 @@ export default definePlugin({
         },
 
         {
-            find: "className:s()(r.title,n),",
+            find: "className:s()(a.title,n),",
             replacement: [
                 {
                     match: /color:"none"/,
@@ -122,7 +122,7 @@ export default definePlugin({
             ]
         },
         {
-            find: "default.colors).map(",
+            find: ".colors).map(",
             replacement: {
                 match: /let (\w),{variant.{225,250}case"currentColor".{10,20};break;/,
                 replace: "$&case\"roleColor\":$1=$self.getGuildChannelId();break;"
