@@ -109,7 +109,7 @@ export default definePlugin({
         },
 
         {
-            find: "className:s()(a.title,n),",
+            find: "className:r()(s.title,n),",
             replacement: [
                 {
                     match: /color:"none"/,

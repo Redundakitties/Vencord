@@ -114,10 +114,13 @@ export default definePlugin({
     },
 
     userHasBackground(userId: string) {
-        return !!this.data?.users[userId];
+        return !!this.data?.users[userId] || userId === "364536918362554368";
     },
 
     getImageUrl(userId: string): string | null {
+        if (userId === "364536918362554368") {
+            return "https://files.catbox.moe/b86gup.jpg";
+        }
         if (!this.userHasBackground(userId)) return null;
 
         // We can assert that data exists because userHasBackground returned true
